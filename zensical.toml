@@ -1,0 +1,27 @@
+[project]
+site_name = "vote_simulation"
+site_url = "https://Damidas0.github.io/vote_simulation/"
+repo_url = "https://github.com/Damidas0/vote_simulation"
+repo_name = "Damidas0/vote_simulation"
+
+nav = [
+  { "Home" = "index.md" },
+  { "Installation" = "installation.md" },
+  { "Usage" = "usage.md" },
+  { "API Reference" = "api.md" },
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "material/brightness-7"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "material/brightness-4"
+toggle.name = "Switch to light mode"
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
