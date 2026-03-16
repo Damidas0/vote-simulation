@@ -44,10 +44,10 @@ def get_data(file_path: str) -> tuple[np.ndarray, np.ndarray]:
         candidates = np.asarray(candidates_list, dtype=str)
         data = np.asarray(rows, dtype=np.float64).T  # rows = voters, columns = candidates
 
-    print(f"Loaded data from {file_path}: {data.shape[0]} voters, {data.shape[1]} candidates.")
 
     except Exception as e:
         raise ValueError(f"Error reading the file : {e}") from e
+
 
     return candidates, data
 
