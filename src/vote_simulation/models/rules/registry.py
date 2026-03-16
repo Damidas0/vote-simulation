@@ -22,6 +22,7 @@ from whalrus import (
     RuleSchulze,
     RuleSimplifiedDodgson,
     RuleTwoRound,
+    RuleKApproval,
 )
 
 RuleBuilder = Callable[[list, set[str]], object]
@@ -215,7 +216,6 @@ def _build_minimax(ballots: list, candidates: set[str]) -> object:
         ballots, candidates=candidates
     )  # TODO : check if minimax and maximin are the same rule or if we need to implement a specific minimax rule
 
-
 register_rule("MMAX", _build_minimax)
 
 
@@ -224,8 +224,14 @@ def _build_schulze(ballots: list, candidates: set[str]) -> object:
     return RuleSchulze(ballots, candidates=candidates)
 
 
-register_rule("SCHU", _build_schulze)  # Alias for SCHU
+register_rule("SCHU", _build_schulze)  
 
+
+def _build_k_approval(ballots: list, candidates: set[str]) -> object:
+    """ K-approval rule : code AP_K"""
+    return RuleKApproval(ballots, candidates=candidates, k=2)  # Example with k=2
+
+register_rule("AP_K", _build_k_approval) 
 
 """ TO CHECK LATER ON """
 '''
@@ -236,17 +242,10 @@ def _build_iterated_elimination(ballots: list, candidates: set[str]) -> object:
 
 
 
-def _build_k_approval(ballots: list, candidates: set[str]) -> object:
-    """ K-approval rule : code AP_K"""
-    return RuleKApproval(ballots, candidates=candidates, k=2)  # Example with k=2
 
 def _build_kim_roush(ballots: list, candidates: set[str]) -> object:
     """ Kim-Roush rule"""
     return RuleKimRoush(ballots, candidates=candidates)
-
-def _build_maximin(ballots: list, candidates: set[str]) -> object:
-    """ Maximin rule"""
-    return RuleMaximin(ballots, candidates=candidates)
 
 
 def _build_ranked_pairs(ballots: list, candidates: set[str]) -> object:
