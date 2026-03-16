@@ -3,7 +3,7 @@
 import typer
 from rich.console import Console
 
-from vote_simulation import utils
+# from vote_simulation import utils
 
 app = typer.Typer()
 console = Console()
@@ -12,10 +12,9 @@ console = Console()
 @app.command()
 def main() -> None:
     """Console script for vote_simulation."""
-    console.print("Replace this message by putting your code into "
-               "vote_simulation.cli.main")
+    console.print("Replace this message by putting your code into vote_simulation.cli.main")
     console.print("See Typer documentation at https://typer.tiangolo.com/")
-    utils.do_something_useful()
+    # utils.do_something_useful()
 
 
 if __name__ == "__main__":
