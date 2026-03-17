@@ -1,3 +1,3 @@
 # API Reference
 
-::: vote_simulation
+::: vote_simulation.models.rules.registry
