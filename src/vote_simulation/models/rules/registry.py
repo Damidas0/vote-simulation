@@ -25,6 +25,8 @@ from whalrus import (
     RuleTwoRound,
 )
 
+from vote_simulation.models.rules.rule_star import RuleStar
+
 RuleBuilder = Callable[[list, set[str]], object]
 # Index
 _RULE_BUILDERS: dict[str, RuleBuilder] = {}
@@ -147,10 +149,10 @@ register_rule("BUCK_R", _build_bucklin_rounds)
 
 def _build_star(ballots: list, candidates: set[str]) -> object:
     """STAR rule : code STAR"""
-    return NotImplementedError("STAR rule is not implemented yet")
+    return RuleStar(ballots, candidates=candidates, tie_break=Priority.ASCENDING)
 
 
-register_rule("STAR", _build_star)  # TODO: implement STAR rule
+register_rule("STAR", _build_star)
 
 
 def _build_dodgson(ballots: list, candidates: set[str]) -> object:
@@ -234,6 +236,7 @@ def _build_k_approval(ballots: list, candidates: set[str]) -> object:
 
 
 register_rule("AP_K", _build_k_approval)
+
 
 """ TO CHECK LATER ON """
 '''
