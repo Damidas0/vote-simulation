@@ -147,5 +147,5 @@ def simulation_batch(config_path: str):
 
 
 if __name__ == "__main__":
-    #simulation_batch("config/simulation.toml")
-    simulation("config/simulation.toml")
+    simulation_batch("config/simulation.toml")
+    #simulation("config/simulation.toml")
