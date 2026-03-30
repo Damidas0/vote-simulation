@@ -1,17 +1,22 @@
 [project]
 site_name = "vote_simulation"
 site_url = "https://Damidas0.github.io/vote_simulation/"
-repo_url = "https://github.com/Damidas0/vote_simulation"
+repo_url = "https://github.com/Damidas0/vote-simulation"
 repo_name = "Damidas0/vote_simulation"
 
 nav = [
   { "Home" = "index.md" },
   { "Getting started" = "getting_start.md"},
+  { "References" = [
+    { "Rule catalog" = "rules.md" },
+    { "Data generation" = "data_generation.md" },
+    { "Data instance" = "models/data_instance.md" },
+    { "Simulation results" = "models/simulation_results"}
+  ] },
+
+
   { "Usage" = "usage.md" },
   { "Simulation workflow" = "simulation.md" },
-  { "Rule catalog" = "rules.md" },
-  { "Data generation" = "data_generation.md" },
-  { "API Reference" = "api.md" },
 ]
 
 [[project.theme.palette]]

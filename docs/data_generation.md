@@ -19,6 +19,7 @@ All generators are integrated via the `generator_codes` key in `config/simulatio
 | VMF_HC | [Von Mises-Fisher Hypercircle](https://francois-durand.github.io/svvamp/reference/preferences/generator_profile_vmf_hypercircle.html) | Tested & validated |
 | VMF_HS | [Von Mises-Fisher Hypersphere](https://francois-durand.github.io/svvamp/reference/preferences/generator_profile_vmf_hypersphere.html) | Tested & validated |
 
+::: vote_simulation.models.data_generation.generator_registry
 
 ## Euclidean box 
 
@@ -83,4 +84,3 @@ Issue to fix not working for now
 | ![plot3](img/vmf_hsPlot3.png) | ![mds](img/vmf_hsMDS.png) |
 |||
 
-// ::: vote_simulation.models.data_generation.generator_registry

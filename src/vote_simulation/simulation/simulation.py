@@ -298,11 +298,3 @@ def _validate_generation_config(config: SimulationConfig) -> None:
 
 if __name__ == "__main__":
     simulation_from_config("config/simulation.toml")
-    # sim("data/gen/UNI_v101_c3/iter_0001.parquet", "PLU1")
-#
-# data = DataInstance("data/gen/VMF_HC_v101_c14/iter_0001.parquet")
-# print("Candidates:", data.candidates)
-# print("Data shape:", data.data.shape)
-
-# print(_RULE_BUILDERS.keys())
-# run_rules_on_instance(data, rule_codes=_RULE_BUILDERS.keys())

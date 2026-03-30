@@ -1,4 +1,4 @@
-"""DataInstance: load or generate election profiles and persist them."""
+"""Load or generate election profiles and persist them."""
 
 from __future__ import annotations
 
@@ -31,13 +31,12 @@ class DataInstance:
            di = DataInstance.from_profile(profile)
     """
 
-    # ------------------------------------------------------------------ init
-
     def __init__(self, file_path: str):
         try:
             self.candidates, self.data = self.get_data(file_path)
             self.profile = self.build_profile(self.candidates, self.data)
             self.file_path = file_path
+            self.model = None  # If
         except Exception as e:
             raise ValueError(f"Error initializing DataInstance: {e}") from e
 
@@ -84,7 +83,15 @@ class DataInstance:
 
     @classmethod
     def from_profile(cls, profile: Profile, file_path: str = "") -> DataInstance:
-        """Wrap an existing ``svvamp.Profile`` into a ``DataInstance``."""
+        """Wrap an existing ``svvamp.Profile`` into a ``DataInstance``.
+
+        Args:
+            profile: An existing ``svvamp.Profile`` object.
+            file_path: Optional file path associated with the profile.
+
+        Returns:
+            A new ``DataInstance`` wrapping the provided profile.
+        """
         instance = object.__new__(cls)
         instance.candidates = np.asarray(profile.labels_candidates, dtype=str)
         instance.data = np.asarray(profile.preferences_ut, dtype=np.float64)
@@ -92,13 +99,18 @@ class DataInstance:
         instance.file_path = file_path
         return instance
 
-    # -------------------------------------------------------------- loaders
+    # loaders
 
     def get_csv(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
         """Load candidate labels and utility matrix from a CSV file.
 
         Args:
             file_path: Path to the CSV file.
+
+        Returns:
+            A tuple containing:
+                - candidates: 1-D array of candidate names.
+                - data: 2-D array of shape (n_voters, n_candidates) with utility values.
         """
         try:
             candidates_list: list[str] = []
@@ -133,6 +145,11 @@ class DataInstance:
 
         Args:
             file_path: Path to the Parquet file.
+
+        Returns:
+            A tuple containing:
+                - candidates: 1-D array of candidate names.
+                - data: 2-D array of shape (n_voters, n_candidates) with utility values.
         """
         try:
             df = pd.read_parquet(file_path)
@@ -203,8 +220,6 @@ class DataInstance:
         df = pd.DataFrame(self.data, columns=self.candidates.tolist())
         df.to_csv(str(path), index=False)
         return str(path.resolve())
-
-    # --------------------------------------------------------- properties
 
     @property
     def n_voters(self) -> int:

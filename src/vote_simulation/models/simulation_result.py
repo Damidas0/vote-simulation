@@ -9,7 +9,11 @@ import pandas as pd
 
 @dataclass(slots=True)
 class SimulationStepResult:
-    """Result of a simulation"""
+    """Result of a simulation
+
+    Attributes:
+        data_source: str - File path of the source
+        winners_by_rule: dict[str, list[str]] - Mapping of rule code to list of winners for the simulation"""
 
     data_source: str  # File path of the source
     winners_by_rule: dict[str, list[str]] = field(
@@ -17,13 +21,24 @@ class SimulationStepResult:
     )  # Mapping of rule code to list of winners for the simulation
 
     def add_method_result(self, rule_code: str, winners: list[str]) -> None:
-        """Add or update winners for one voting method in this step."""
+        """Add or update winners for one voting method in this step.
+
+        Args:
+            rule_code: str - Code of the voting method (e.g., "STV", "IRV", "Borda")
+            winners: list[str] - List of winner labels for the given method. Can be multiple in case of ties.
+        """
 
         normalized_code = rule_code.strip().upper()
         self.winners_by_rule[normalized_code] = winners
 
     def save_to_file(self, file_path: str) -> None:
-        """Save the step result to a parquet file."""
+        """Save the step result to a parquet file.
+
+        Args:
+            file_path: str - Path to the parquet file where the step result will be saved.
+            The resulting file will have columns "Rule" and "Winner",
+            where each row corresponds to one winner for a given rule.
+        """
         # Convert the winners_by_rule dictionary to a DataFrame
         df = pd.DataFrame(
             [(rule, winner) for rule, winners in self.winners_by_rule.items() for winner in winners],
@@ -34,7 +49,14 @@ class SimulationStepResult:
         df.to_parquet(file_path, index=False)
 
     def load_from_file(self, file_path: str) -> None:
-        """Load the step result from a parquet file."""
+        """Load the step result from a parquet file.
+
+        The parquet file is expected to have columns "Rule" and "Winner",
+        where each row corresponds to one winner for a given rule.
+
+        Args:
+            file_path: str - Path to the parquet file containing the step result.
+        """
         df = pd.read_parquet(file_path)
         self.winners_by_rule = df.groupby("Rule")["Winner"].apply(list).to_dict()
 
@@ -62,8 +84,14 @@ class SimulationSeriesResult:
         return len(self.steps)
 
     def save_to_file(self, file_path: str) -> None:
-        """Save the series result to a parquet file."""
-        # Convert the series of steps into a DataFrame
+        """Save the series result to a parquet file.
+
+        Args:
+            file_path: str - Path to the parquet file where the series result will be saved.
+            The resulting file will have columns "DataSource", "Rule", and "Winner", where each row corresponds
+            to one winner for a given rule and data source.
+        """
+        # Convert the series of steps into a DataFrame TODO: redo properly
         df = pd.DataFrame(
             [
                 {"DataSource": step.data_source, "Rule": rule, "Winner": winner}
@@ -77,7 +105,12 @@ class SimulationSeriesResult:
         df.to_parquet(file_path, index=False)
 
     def load_from_file(self, file_path: str) -> None:
-        """Load the series result from a parquet file."""
+        """Load the series result from a parquet file.
+
+        Args:
+            file_path: str - Path to the parquet file containing the series result.
+            The file is expected to have columns "DataSource", "Rule", and "Winner".
+        """
         df = pd.read_parquet(file_path)
         self.steps = []
         for data_source, group in df.groupby("DataSource"):

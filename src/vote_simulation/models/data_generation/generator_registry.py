@@ -1,23 +1,18 @@
 """Generator registry mapping short codes to svvamp GeneratorProfile factories.
 
-This mirrors the rule registry pattern: each generative model is referenced by
-a short uppercase code (e.g. ``"UNI"``, ``"IC"``) and backed by the
-corresponding ``svvamp.GeneratorProfile*`` class.
-
-Usage
------
->>> from vote_simulation.models.data_generation.generator_registry import get_generator_builder
->>> builder = get_generator_builder("UNI")
->>> profile = builder(n_v=100, n_c=5, seed=42)
+Usage examples:
+```python
+> from vote_simulation.models.data_generation.generator_registry import get_generator_builder
+> builder = get_generator_builder("UNI")
+> profile = builder(n_v=100, n_c=5, seed=42)
+```
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.manifold import MDS
 from svvamp import (
     GeneratorProfileCubicUniform,
     GeneratorProfileEuclideanBox,
@@ -322,45 +317,3 @@ def _build_vmf_hypersphere(
 
 
 register_generator("VMF_HS", _build_vmf_hypersphere)
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-
-    IMG_DIR = Path(__file__).resolve().parents[4] / "docs" / "img"
-    IMG_DIR.mkdir(parents=True, exist_ok=True)
-
-    codes = list_generator_codes()
-    print("Registered generators:", codes)
-
-    n_v, n_c = 1000, 3
-
-    for gen_code in codes:
-        if gen_code == "IANC":
-            print(f"  → {gen_code} ... skipped (slow)", flush=True)
-            continue
-        print(f"  → {gen_code} ...", end=" ", flush=True)
-        builder = get_generator_builder(gen_code)
-        profile = builder(n_v=n_v, n_c=n_c, seed=42)
-
-        # - Plot3 (svvamp 3-D utility scatter) ---
-        profile.plot3()
-        plot3_path = IMG_DIR / f"{gen_code.lower()}Plot3.png"
-        plt.savefig(plot3_path, dpi=150, bbox_inches="tight")
-        plt.close()
-
-        # - MDS 2-D projection ---
-        mds = MDS(n_components=2, random_state=42, normalized_stress="auto")
-        coords_2d = mds.fit_transform(profile.preferences_ut)
-
-        plt.figure(figsize=(5, 5))
-        plt.scatter(coords_2d[:, 0], coords_2d[:, 1], alpha=0.7, edgecolors="k", linewidths=0.3)
-        plt.title(f"{gen_code} (n_v={n_v}, n_c={n_c}) — MDS 2D projection")
-        plt.tight_layout()
-        mds_path = IMG_DIR / f"{gen_code.lower()}MDS.png"
-        plt.savefig(mds_path, dpi=150, bbox_inches="tight")
-        plt.close()
-
-        print(f"saved {plot3_path.name}, {mds_path.name}")
-
-    print(f"\nAll plots saved to {IMG_DIR}")

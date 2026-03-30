@@ -1,0 +1,1 @@
+::: vote_simulation.models.simulation_result

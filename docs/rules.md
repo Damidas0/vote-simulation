@@ -45,4 +45,30 @@ All rules expose a `cowinners_` attribute. They are integrated via the `rule_cod
 | YOUN | Young | [rule_young](https://francois-durand.github.io/svvamp/reference/rules/rule_young.html) | Tested & validated |
 
 
+## How to add a rule
 
+Use the public registry helpers to add custom rules :
+
+```python
+from svvamp import RuleApproval
+
+from vote_simulation.models.rules import get_rule_builder, make_rule_builder, register_rule
+
+
+register_rule(
+    "AP_T8",
+    make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.8)(profile)),
+)
+
+ballots = [
+    {"Alice": 1.0, "Bob": 0.9, "Chloe": 0.2},
+    {"Alice": 0.85, "Bob": 0.7, "Chloe": 0.9},
+]
+
+result = get_rule_builder("AP_T8")(ballots)
+print(result.cowinners_)
+```
+
+See `demo/adding_rule.py` for a already built example.
+
+::: vote_simulation.models.rules.registry

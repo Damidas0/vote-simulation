@@ -160,6 +160,21 @@ def _build_with_rule(rule_factory: Callable[[Profile], Any]) -> RuleBuilder:
     return builder
 
 
+def make_rule_builder(rule_factory: Callable[[Profile], Any]) -> RuleBuilder:
+    """Create a public `RuleBuilder` from a `Profile -> rule result` factory.
+
+    This helper is intended for external users who want to register custom rules
+    while reusing the registry's profile conversion and co-winner post-processing.
+
+    Args:
+        rule_factory: Callable that takes a `svvamp.Profile` and returns a rule result.
+
+    Returns:
+        A `RuleBuilder` that can be registered in the registry.
+    """
+    return _build_with_rule(rule_factory)
+
+
 def register_rule(code: str, builder: RuleBuilder) -> None:
     """Register a rule builder under a short code."""
     normalized_code = code.strip().upper()
