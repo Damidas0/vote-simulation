@@ -1,8 +1,4 @@
 [simulation]
-# Legacy paths (optional — used by `simulation()` and `simulation_batch()`)
-# input_folder_path = "/home/ambraser/Desktop/Stage/Code/R/data_simulation_2025/data_simu_UNI/"
-# data_path = "/home/ambraser/Desktop/Stage/Code/R/data_simulation_2025/data_simu_UNI/simu_UNI_v_101_c_14_i_693.csv"
-
 # Root directory for gen/ and sim_result/
 output_base_path = "../data/"
 

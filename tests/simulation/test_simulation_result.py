@@ -3,67 +3,66 @@ import numpy as np
 
 from vote_simulation.models.simulation_result import SimulationSeriesResult, SimulationStepResult
 
-
 matplotlib.use("Agg")
 
 
 def test_add_method_result_builds_symmetric_uint8_matrix() -> None:
-	step = SimulationStepResult(data_source="sample.parquet")
+    step = SimulationStepResult(data_source="sample.parquet")
 
-	step.add_method_result("borda", ["A"])
-	step.add_method_result("stv", ["A"])
-	step.add_method_result("irv", ["B"])
+    step.add_method_result("borda", ["A"])
+    step.add_method_result("stv", ["A"])
+    step.add_method_result("irv", ["B"])
 
-	expected = np.array(
-		[
-			[0, 0, 1],
-			[0, 0, 1],
-			[1, 1, 0],
-		],
-		dtype=np.uint8,
-	)
+    expected = np.array(
+        [
+            [0, 0, 1],
+            [0, 0, 1],
+            [1, 1, 0],
+        ],
+        dtype=np.float32,
+    )
 
-	assert step.rule_codes == ["BORDA", "STV", "IRV"]
-	assert step.dist_matrix.dtype == np.uint8
-	assert np.array_equal(step.dist_matrix, expected)
+    assert step.rule_codes == ["BORDA", "STV", "IRV"]
+    assert step.dist_matrix.dtype == np.float32
+    assert np.array_equal(step.dist_matrix, expected)
 
 
 def test_updating_existing_rule_refreshes_only_its_distances() -> None:
-	step = SimulationStepResult(
-		data_source="sample.parquet",
-		winners_by_rule={
-			"BORDA": ["A"],
-			"STV": ["A"],
-			"IRV": ["B"],
-		},
-	)
+    step = SimulationStepResult(
+        data_source="sample.parquet",
+        winners_by_rule={
+            "BORDA": ["A"],
+            "STV": ["A"],
+            "IRV": ["B"],
+        },
+    )
 
-	step.add_method_result("stv", ["B"])
+    step.add_method_result("stv", ["B"])
 
-	expected = np.array(
-		[
-			[0, 1, 1],
-			[1, 0, 0],
-			[1, 0, 0],
-		],
-		dtype=np.uint8,
-	)
+    expected = np.array(
+        [
+            [0, 1, 1],
+            [1, 0, 0],
+            [1, 0, 0],
+        ],
+        dtype=np.float32,
+    )
 
-	assert np.array_equal(step.dist_matrix, expected)
+    assert np.array_equal(step.dist_matrix, expected)
 
 
 def test_string_representation_contains_pretty_matrix() -> None:
-	step = SimulationStepResult(data_source="sample.parquet")
-	step.add_method_result("borda", ["A"])
-	step.add_method_result("stv", ["B"])
+    step = SimulationStepResult(data_source="sample.parquet")
+    step.add_method_result("borda", ["A"])
+    step.add_method_result("stv", ["B"])
 
-	rendered = str(step)
+    rendered = str(step)
 
-	assert "Data Source: sample.parquet" in rendered
-	assert "Winners by rule:" in rendered
-	assert "Distance Matrix:" in rendered
-	assert "BORDA" in rendered
-	assert "STV" in rendered
+    assert "Data Source: sample.parquet" in rendered
+    assert "Winners by rule:" in rendered
+    assert "Distance Matrix:" in rendered
+    assert "BORDA" in rendered
+    assert "STV" in rendered
 
 
 def test_plot_distance_matrix_returns_axes() -> None:
@@ -90,7 +89,7 @@ def test_series_step_count_and_mean_diagonal_is_zero() -> None:
 
     assert series.step_count == 5
     mean = series.mean_distance_matrix
-    assert mean.dtype == np.int32
+    assert mean.dtype == np.float32
     assert np.all(np.diag(mean) == 0)
 
 
@@ -117,7 +116,7 @@ def test_series_mean_values_correct() -> None:
     borda_idx = series._rule_index["BORDA"]
     stv_idx = series._rule_index["STV"]
     # 3/4 steps disagree → 75 on the [0,100] scale
-    assert int(mean[borda_idx, stv_idx]) == 75
+    assert abs(float(mean[borda_idx, stv_idx]) - 75.0) < 0.1
 
 
 def test_series_plot_mean_distance_matrix_returns_axes() -> None:

@@ -28,10 +28,11 @@ from tqdm import tqdm
 
 from vote_simulation.models.data_generation.data_instance import DataInstance
 from vote_simulation.models.rules import RuleResult, get_rule_builder
-from vote_simulation.models.simulation_result import SimulationStepResult, SimulationSeriesResult
+from vote_simulation.models.simulation_result import SimulationSeriesResult, SimulationStepResult
 from vote_simulation.simulation.configuration import SimulationConfig, load_simulation_config
 
 # utils
+
 
 def _gen_dir(base: str, model: str, n_v: int, n_c: int) -> Path:
     """Return the directory for generated data: ``<base>/gen/<MODEL>_v<NV>_c<NC>``."""
@@ -56,15 +57,24 @@ def obtain_data_instance(
     n_v: int,
     n_c: int,
     *,
-    iteration: int,
-    seed: int,
-    base_path: str,
+    iteration: int = 0,
+    seed: int = 161,
+    base_path: str = "data",
     extra_params: dict[str, object] | None = None,
 ) -> DataInstance:
     """Load a cached profile or generate + persist it.
 
     If the parquet file already exists the profile is loaded from disk;
     otherwise it is generated and saved for future reuse.
+
+    Args:
+        model: Generative model code (e.g. "UNI", "IC").
+        n_v: Number of voters.
+        n_c: Number of candidates.
+        iteration: Iteration index.
+        seed: Random seed for generation (will be combined with iteration index for variability).
+        base_path: Root folder for generated data (see config.output_base_path).
+        extra_params: Optional dict of extra parameters to pass to the generator (per-model).
     """
     gen_path = _gen_dir(base_path, model, n_v, n_c) / _iter_filename(iteration)
 
@@ -85,13 +95,17 @@ def obtain_data_instance(
     return di
 
 
-# apply rules to a DI
-
 def run_rules_on_instance(
     data_instance: DataInstance,
     rule_codes: list[str],
 ) -> SimulationStepResult:
-    """Apply every rule and collect winners into a ``SimulationStepResult``."""
+    """
+    Apply every rule and collect winners into a ``SimulationStepResult``.
+
+    Args:
+        data_instance: The profile data to run the rules on.
+        rule_codes: List of rule codes to apply (e.g. ["RV", "MJ", "AP_T"]).
+    """
     profile = data_instance.profile
     step = SimulationStepResult(data_source=data_instance.file_path)
 
@@ -132,29 +146,9 @@ def sim(file_path: str, rule_code: str) -> None:
         print(f"Error building rule '{rule_code}': {e}")
 
 
-def simulation(config_path: str) -> SimulationStepResult:
-    """Run the vote simulation on a *single* data file (legacy behaviour)."""
-    config = load_simulation_config(config_path)
-
-    if config.data_path is None:
-        raise ValueError("Configuration must include data_path for simulation")
-
-    data_instance = DataInstance(config.data_path)
-    step_result = run_rules_on_instance(data_instance, config.rule_codes)
-
-    output_dir = Path(config.output_base_path) / "sim"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    from datetime import UTC, datetime
-
-    timestamp = datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
-    output_file = output_dir / f"simulation_{timestamp}.parquet"
-    step_result.save_to_file(str(output_file))
-    print(f"Saved simulation step to: {output_file}")
-    return step_result
-
-
 #  generate data
 # --------------------------------------------------------------------------
+
 
 def generate_data(config_path: str) -> list[str]:
     """Generate (or retrieve cached) profiles for every combination defined in the config.
@@ -198,6 +192,9 @@ def simulation_from_config(config_path: str) -> None:
     1. Obtain (generate or load) the profile.
     2. Run all requested rules.
     3. Save the result in ``sim_result/<MODEL>_v<NV>_c<NC>/iter_XXXX.parquet``.
+
+    Args:
+        config_path: Path to the TOML configuration file (see docs for the template).
     """
     config = load_simulation_config(config_path)
     _validate_generation_config(config)
@@ -211,7 +208,7 @@ def simulation_from_config(config_path: str) -> None:
             for n_v in config.voters or []:
                 for n_c in config.candidates or []:
                     for it in range(config.iterations):
-                        # Obtain data
+                        # 1) Obtain data
                         di = obtain_data_instance(
                             model=model,
                             n_v=n_v,
@@ -243,7 +240,7 @@ def simulation_full(config_path: str) -> None:
     return simulation_from_config(config_path)
 
 
-def simulation_batch(config_path: str) :
+def simulation_batch(config_path: str):
     """Run vote simulations on all files in a folder specified in the configuration."""
     config = load_simulation_config(config_path)
 
@@ -288,13 +285,19 @@ def simulation_from_file(file_path: str, rule_codes: list[str]) -> SimulationSte
     return step_result
 
 
-
 def simulation_series(folder_path: str, rule_codes: list[str]) -> SimulationSeriesResult:
     """Run simulations on all files in a folder and return a :class:`SimulationSeriesResult`.
 
     Each file is processed as a :class:`SimulationStepResult` and accumulated
     into the series via :meth:`SimulationSeriesResult.add_step`, which keeps the
     running sum matrix up to date incrementally.
+
+    Args:
+    folder_path: Path to the folder containing input CSV or Parquet files.
+    rule_codes: List of rule codes to apply to each file (e.g. ["RV", "MJ", "AP_T"]).
+
+    Returns:
+    A :class:`SimulationSeriesResult` containing all the step results and the aggregated mean distance matrix.
     """
     folder = Path(folder_path)
     if not folder.is_dir():
@@ -319,7 +322,6 @@ def simulation_series(folder_path: str, rule_codes: list[str]) -> SimulationSeri
     print(f"Series simulation completed — {series.step_count} iteration(s)")
     print(f"{'=' * 60}")
     return series
-
 
 
 # validation

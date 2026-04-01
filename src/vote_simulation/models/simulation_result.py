@@ -11,6 +11,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from vote_simulation.models.distance import Distance
+from vote_simulation.models.distance.distance import JaccardDistance
+
 
 def _plot_heatmap(
     matrix: np.ndarray,
@@ -36,17 +39,17 @@ def _plot_heatmap(
     figure_size = builtins_max(6.0, 0.45 * rule_count + 0.18 * longest_label)
     annotation_fontsize = builtins_max(4, builtins_min(10, int(220 / builtins_max(rule_count, 1))))
 
-    #white_to_blue = LinearSegmentedColormap.from_list("white_to_blue", ["#FFFFFF", "#0055FF"])
+    # white_to_blue = LinearSegmentedColormap.from_list("white_to_blue", ["#FFFFFF", "#0055FF"])
 
     if ax is None:
         _, ax = plt.subplots(figsize=(figure_size, figure_size), constrained_layout=True)
 
-    image = ax.imshow(matrix, cmap=plt.cm.Blues, vmin=vmin, vmax=vmax, interpolation="nearest")
+    image = ax.imshow(matrix, cmap="Blues", vmin=vmin, vmax=vmax, interpolation="nearest")
     ax.set_aspect("equal")
     ax.set_xticks(range(rule_count), labels=labels)
     ax.set_yticks(range(rule_count), labels=labels)
     plt.setp(ax.get_xticklabels(), rotation=45, ha="center")
-    #plt.setp(ax.get_yticklabels(), fontsize=tick_fontsize)
+    # plt.setp(ax.get_yticklabels(), fontsize=tick_fontsize)
     ax.set_title(title)
     ax.set_xlabel("Rules")
     ax.set_ylabel("Rules")
@@ -74,7 +77,6 @@ def _plot_heatmap(
     colorbar.set_ticklabels([str(vmin), str(vmax)])
     colorbar.set_label(colorbar_label)
 
-
     if show:
         plt.show()
 
@@ -85,18 +87,18 @@ def _plot_heatmap(
 class SimulationStepResult:
     """Result of a simulation step.
 
-    The comparison matrix is stored as a compact symmetric `np.uint8` 2D array.
-    This keeps it lightweight in memory while still making numeric operations and
-    plotting straightforward.
+    The comparison matrix is stored as a symmetric ``float32`` 2D array so that
+    any distance metric (binary, Jaccard, etc.) can be used.
     """
 
     data_source: str
     winners_by_rule: dict[str, list[str]] = field(default_factory=dict)
+    distance_metric: Distance = field(default_factory=JaccardDistance)
     _rule_order: list[str] = field(default_factory=list, init=False, repr=False)
     _rule_index: dict[str, int] = field(default_factory=dict, init=False, repr=False)
     _winner_sets_by_rule: dict[str, frozenset[str]] = field(default_factory=dict, init=False, repr=False)
     _distance_matrix: np.ndarray = field(
-        default_factory=lambda: np.zeros((0, 0), dtype=np.uint8),
+        default_factory=lambda: np.zeros((0, 0), dtype=np.float32),
         init=False,
         repr=False,
     )
@@ -109,7 +111,7 @@ class SimulationStepResult:
         self._rule_order = []
         self._rule_index = {}
         self._winner_sets_by_rule = {}
-        self._distance_matrix = np.zeros((0, 0), dtype=np.uint8)
+        self._distance_matrix = np.zeros((0, 0), dtype=np.float32)
 
         for rule_code, winners in initial_items:
             self.add_method_result(rule_code, winners)
@@ -132,8 +134,8 @@ class SimulationStepResult:
     def distance_matrix_frame(self) -> pd.DataFrame:
         """Distance matrix as a labeled DataFrame for display and analysis."""
 
-        return pd.DataFrame(self._distance_matrix, index=self._rule_order, columns=self._rule_order, copy=False)
-
+        idx = pd.Index(self._rule_order)
+        return pd.DataFrame(self._distance_matrix, index=idx, columns=idx, copy=False)
 
     def add_method_result(self, rule_code: str, winners: list[str]) -> None:
         """Add or update winners for one voting method in this step.
@@ -189,7 +191,7 @@ class SimulationStepResult:
         self._rule_order = []
         self._rule_index = {}
         self._winner_sets_by_rule = {}
-        self._distance_matrix = np.zeros((0, 0), dtype=np.uint8)
+        self._distance_matrix = np.zeros((0, 0), dtype=np.float32)
 
         for rule_code, winners in loaded_winners.items():
             self.add_method_result(str(rule_code), winners)
@@ -205,9 +207,9 @@ class SimulationStepResult:
     def __str__(self) -> str:
         """String representation with a readable matrix block."""
 
-        winners_str = "\n".join(
-            f"- {rule}: {', '.join(winners)}" for rule, winners in self.winners_by_rule.items()
-        ) or "- <none>"
+        winners_str = (
+            "\n".join(f"- {rule}: {', '.join(winners)}" for rule, winners in self.winners_by_rule.items()) or "- <none>"
+        )
 
         return (
             f"Data Source: {self.data_source}\n"
@@ -223,7 +225,7 @@ class SimulationStepResult:
         self._rule_order = []
         self._rule_index = {}
         self._winner_sets_by_rule = {}
-        self._distance_matrix = np.zeros((0, 0), dtype=np.uint8)
+        self._distance_matrix = np.zeros((0, 0), dtype=np.float32)
 
         for rule_code, winners in ordered_items:
             self.add_method_result(rule_code, winners)
@@ -243,14 +245,14 @@ class SimulationStepResult:
             raise ValueError("Cannot plot an empty distance matrix.")
 
         return _plot_heatmap(
-            self._distance_matrix.astype(np.int16),
+            self._distance_matrix,
             self._rule_order,
             title=f"Rule distance matrix\n{self.data_source}",
             ax=ax,
             vmin=0,
             vmax=1,
             annotate=annotate,
-            annotation_fmt=".0f",
+            annotation_fmt=".2f",
             colorbar_label="Distance",
             show=show,
         )
@@ -260,7 +262,7 @@ class SimulationStepResult:
 
         previous_size = len(self._rule_order)
         new_size = previous_size + 1
-        new_matrix = np.zeros((new_size, new_size), dtype=np.uint8)
+        new_matrix = np.zeros((new_size, new_size), dtype=np.float32)
 
         if previous_size:
             new_matrix[:previous_size, :previous_size] = self._distance_matrix
@@ -274,17 +276,17 @@ class SimulationStepResult:
         """Refresh only one rule row/column in the symmetric matrix."""
 
         row_index = self._rule_index[rule_code]
-        self._distance_matrix[row_index, row_index] = 0
+        self._distance_matrix[row_index, row_index] = 0.0
         winner_set = self._winner_sets_by_rule[rule_code]
+        metric = self.distance_metric
 
         for other_rule, other_index in self._rule_index.items():
             if other_rule == rule_code:
                 continue
 
-            distance = np.uint8(winner_set != self._winner_sets_by_rule[other_rule])
+            distance = metric.compute(winner_set, self._winner_sets_by_rule[other_rule])
             self._distance_matrix[row_index, other_index] = distance
             self._distance_matrix[other_index, row_index] = distance
-
 
 
 @dataclass(slots=True)
@@ -297,11 +299,11 @@ class SimulationSeriesResult:
     """
 
     steps: list[SimulationStepResult] = field(default_factory=list)
-    # Accumulator fields 
+    # Accumulator fields
     _rule_order: list[str] = field(default_factory=list, init=False, repr=False)
     _rule_index: dict[str, int] = field(default_factory=dict, init=False, repr=False)
     _matrix_sum: np.ndarray = field(
-        default_factory=lambda: np.zeros((0, 0), dtype=np.uint32),
+        default_factory=lambda: np.zeros((0, 0), dtype=np.float64),
         init=False,
         repr=False,
     )
@@ -329,18 +331,18 @@ class SimulationSeriesResult:
 
         if self._iteration_count == 0:
             return np.zeros((0, 0), dtype=np.float32)
-        return (100*self._matrix_sum / self._iteration_count).astype(np.int32)
+        return (100.0 * self._matrix_sum / self._iteration_count).astype(np.float32)
 
     @property
     def mean_distance_matrix_frame(self) -> pd.DataFrame:
         """Mean distance matrix as a labeled DataFrame."""
 
         matrix = self.mean_distance_matrix
-        return pd.DataFrame(matrix, index=self._rule_order, columns=self._rule_order)
+        idx = pd.Index(self._rule_order)
+        return pd.DataFrame(matrix, index=idx, columns=idx)
 
     def plot_mean_distance_matrix(
         self,
-        
         ax: Any | None = None,
         *,
         annotate: bool = True,
@@ -355,12 +357,12 @@ class SimulationSeriesResult:
             raise ValueError("Cannot plot: no steps have been added yet.")
 
         return _plot_heatmap(
-            self.mean_distance_matrix.astype(np.int32),
+            self.mean_distance_matrix,
             self._rule_order,
             f"Mean rule distance matrix\n({self._iteration_count} iterations)",
             ax,
             annotate=annotate,
-            annotation_fmt="d",
+            annotation_fmt=".1f",
             colorbar_label="Mean distance (%)",
             show=show,
         )
@@ -394,7 +396,7 @@ class SimulationSeriesResult:
         self.steps = []
         self._rule_order = []
         self._rule_index = {}
-        self._matrix_sum = np.zeros((0, 0), dtype=np.uint32)
+        self._matrix_sum = np.zeros((0, 0), dtype=np.float64)
         self._iteration_count = 0
 
         for data_source, group in df.groupby("DataSource"):
@@ -419,7 +421,7 @@ class SimulationSeriesResult:
             self._rule_order = list(step_rules)
             self._rule_index = dict(step._rule_index)
             n = len(step_rules)
-            self._matrix_sum = np.zeros((n, n), dtype=np.uint32)
+            self._matrix_sum = np.zeros((n, n), dtype=np.float64)
 
         # Build permutation mapping step column index → series column index.
         # This handles the (rare) case where a step's rules are in a different order.

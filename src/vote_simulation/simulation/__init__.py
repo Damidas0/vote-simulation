@@ -9,9 +9,11 @@ from vote_simulation.simulation.simulation import (
     generate_data,
     obtain_data_instance,
     sim,
-    simulation,
     simulation_batch,
+    simulation_from_config,
+    simulation_from_file,
     simulation_full,
+    simulation_series,
 )
 
 __all__ = [
@@ -21,7 +23,9 @@ __all__ = [
     "load_simulation_config",
     "obtain_data_instance",
     "sim",
-    "simulation",
     "simulation_batch",
+    "simulation_from_config",
+    "simulation_from_file",
     "simulation_full",
+    "simulation_series",
 ]
