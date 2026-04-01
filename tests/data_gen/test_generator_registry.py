@@ -11,7 +11,7 @@ from vote_simulation.models.data_generation.generator_registry import (
     register_generator,
 )
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Registry ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Registry 
 
 
 class TestGeneratorRegistry:
@@ -48,7 +48,7 @@ class TestGeneratorRegistry:
         assert callable(builder)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━ Generator builders ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Generator builders
 
 
 class TestBuiltinGenerators:
@@ -88,7 +88,7 @@ class TestBuiltinGenerators:
         assert profile.labels_candidates == ["Candidate 1", "Candidate 2", "Candidate 3"]
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━ Reproducibility ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Reproducibility
 
 
 class TestReproducibility:
@@ -107,7 +107,7 @@ class TestReproducibility:
         assert not np.array_equal(p1.preferences_ut, p2.preferences_ut)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━ DataInstance.from_generator ━━━━━━━━━━━━━━━━━━━━
+#DataInstance.from_generator 
 
 
 class TestDataInstanceFromGenerator:
@@ -125,7 +125,7 @@ class TestDataInstanceFromGenerator:
         assert di.file_path == ""
 
 
-# ━━━━━━━━━━━━━━━━━━━━━ Parquet round-trip ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#Parquet round-trip
 
 
 class TestParquetRoundTrip:

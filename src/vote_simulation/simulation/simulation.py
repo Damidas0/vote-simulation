@@ -28,11 +28,10 @@ from tqdm import tqdm
 
 from vote_simulation.models.data_generation.data_instance import DataInstance
 from vote_simulation.models.rules import RuleResult, get_rule_builder
-from vote_simulation.models.simulation_result import SimulationStepResult
+from vote_simulation.models.simulation_result import SimulationStepResult, SimulationSeriesResult
 from vote_simulation.simulation.configuration import SimulationConfig, load_simulation_config
 
 # utils
-
 
 def _gen_dir(base: str, model: str, n_v: int, n_c: int) -> Path:
     """Return the directory for generated data: ``<base>/gen/<MODEL>_v<NV>_c<NC>``."""
@@ -49,7 +48,7 @@ def _iter_filename(iteration: int) -> str:
     return f"iter_{iteration + 1:04d}.parquet"
 
 
-# ---------------------------------------------------- data obtain-or-generate
+# data obtain-or-generate
 
 
 def obtain_data_instance(
@@ -87,7 +86,6 @@ def obtain_data_instance(
 
 
 # apply rules to a DI
-
 
 def run_rules_on_instance(
     data_instance: DataInstance,
@@ -155,8 +153,8 @@ def simulation(config_path: str) -> SimulationStepResult:
     return step_result
 
 
-#  generate
-
+#  generate data
+# --------------------------------------------------------------------------
 
 def generate_data(config_path: str) -> list[str]:
     """Generate (or retrieve cached) profiles for every combination defined in the config.
@@ -245,7 +243,7 @@ def simulation_full(config_path: str) -> None:
     return simulation_from_config(config_path)
 
 
-def simulation_batch(config_path: str) -> None:
+def simulation_batch(config_path: str) :
     """Run vote simulations on all files in a folder specified in the configuration."""
     config = load_simulation_config(config_path)
 
@@ -283,7 +281,48 @@ def simulation_batch(config_path: str) -> None:
     print(f"{'=' * 60}")
 
 
-# ----------------------------------------------------------- validation
+def simulation_from_file(file_path: str, rule_codes: list[str]) -> SimulationStepResult:
+    """Run simulation on a single file with specified rules."""
+    data_instance = DataInstance(file_path)
+    step_result = run_rules_on_instance(data_instance, rule_codes)
+    return step_result
+
+
+
+def simulation_series(folder_path: str, rule_codes: list[str]) -> SimulationSeriesResult:
+    """Run simulations on all files in a folder and return a :class:`SimulationSeriesResult`.
+
+    Each file is processed as a :class:`SimulationStepResult` and accumulated
+    into the series via :meth:`SimulationSeriesResult.add_step`, which keeps the
+    running sum matrix up to date incrementally.
+    """
+    folder = Path(folder_path)
+    if not folder.is_dir():
+        raise ValueError(f"Input folder not found: {folder}")
+
+    data_files = list(folder.glob("*.csv")) + list(folder.glob("*.parquet"))
+    if not data_files:
+        print(f"No CSV or Parquet files found in {folder}")
+        return SimulationSeriesResult()
+
+    print(f"Found {len(data_files)} data files to process in {folder}")
+
+    series = SimulationSeriesResult()
+    for file_path in tqdm(sorted(data_files)):
+        try:
+            step_result = simulation_from_file(str(file_path), rule_codes)
+            series.add_step(step_result)
+        except Exception as e:  # noqa: BLE001
+            print(f"Error processing file '{file_path}': {e}")
+
+    print(f"\n{'=' * 60}")
+    print(f"Series simulation completed — {series.step_count} iteration(s)")
+    print(f"{'=' * 60}")
+    return series
+
+
+
+# validation
 
 
 def _validate_generation_config(config: SimulationConfig) -> None:
