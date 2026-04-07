@@ -11,7 +11,7 @@ Usage examples:
 from __future__ import annotations
 
 from collections.abc import Callable
-from functools import partial
+from typing import Any
 
 import numpy as np
 from svvamp import (
@@ -74,7 +74,7 @@ def list_generator_codes() -> list[str]:
 
 
 def make_generator_builder(
-    generator_factory: Callable[..., Profile],
+    generator_factory: Callable[..., Any],
     **default_kwargs: object,
 ) -> GeneratorBuilder:
     """Create a public `GeneratorBuilder` from a generator factory.
@@ -210,9 +210,7 @@ register_generator("EUCLID", _build_euclidean_box)
 # Pre-configured Euclidean Box by dimensionality
 register_generator("EUCLID_1D", make_generator_builder(GeneratorProfileEuclideanBox, box_dimensions=[1.0]))
 register_generator("EUCLID_2D", make_generator_builder(GeneratorProfileEuclideanBox, box_dimensions=[1.0, 1.0]))
-register_generator(
-    "EUCLID_3D", make_generator_builder(GeneratorProfileEuclideanBox, box_dimensions=[1.0, 1.0, 1.0])
-)
+register_generator("EUCLID_3D", make_generator_builder(GeneratorProfileEuclideanBox, box_dimensions=[1.0, 1.0, 1.0]))
 register_generator(
     "EUCLID_5D",
     make_generator_builder(GeneratorProfileEuclideanBox, box_dimensions=[1.0, 1.0, 1.0, 1.0, 1.0]),

@@ -1,7 +1,8 @@
-import matplotlib
-import numpy as np
 import os
 import tempfile
+
+import matplotlib
+import numpy as np
 
 from vote_simulation.models.simulation_result import ResultConfig, SimulationSeriesResult, SimulationStepResult
 

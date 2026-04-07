@@ -17,7 +17,6 @@ Single generator::
 
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 
 from matplotlib import pyplot as plt
@@ -57,8 +56,11 @@ def generate_plots(
 
     plt.figure(figsize=(5, 5))
     plt.scatter(
-        coords_2d[:, 0], coords_2d[:, 1],
-        alpha=0.7, edgecolors="k", linewidths=0.3,
+        coords_2d[:, 0],
+        coords_2d[:, 1],
+        alpha=0.7,
+        edgecolors="k",
+        linewidths=0.3,
     )
     plt.title(f"{gen_code} (n_v={n_v}, n_c={n_c}) — MDS 2D projection")
     plt.tight_layout()
@@ -89,6 +91,7 @@ def generate_all(
 
     print(f"\nAll plots saved to {IMG_DIR}")
 
+
 if __name__ == "__main__":
-    #generate_plots("EUCLID", n_v=1000, n_c=3, seed=161)
+    # generate_plots("EUCLID", n_v=1000, n_c=3, seed=161)
     generate_all(n_v=1000, n_c=3, seed=161)

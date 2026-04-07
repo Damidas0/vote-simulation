@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import os
 from builtins import max as builtins_max
 from builtins import min as builtins_min
 from dataclasses import dataclass, field
-import os
 from textwrap import indent
 from typing import Any, NamedTuple
 
@@ -14,7 +14,6 @@ import pandas as pd
 
 from vote_simulation.models.distance import Distance
 from vote_simulation.models.distance.distance import JaccardDistance
-
 
 # ---------------------------------------------------------------------------
 # MDS projection result
@@ -143,8 +142,10 @@ class ResultConfig:
         n_candidates = frozenset(int(c) for c in data.get("n_candidates", "").split(",") if c)
         n_iterations = int(data["n_iterations"]) if data.get("n_iterations") else 0
         return ResultConfig(
-            gen_models=gen_models, n_voters=n_voters,
-            n_candidates=n_candidates, n_iterations=n_iterations,
+            gen_models=gen_models,
+            n_voters=n_voters,
+            n_candidates=n_candidates,
+            n_iterations=n_iterations,
         )
 
     def __bool__(self) -> bool:
@@ -180,7 +181,6 @@ def _plot_heatmap(
     longest_label = builtins_max((len(lbl) for lbl in labels), default=1)
     figure_size = builtins_max(6.0, 0.45 * rule_count + 0.18 * longest_label)
     annotation_fontsize = builtins_max(4, builtins_min(10, int(220 / builtins_max(rule_count, 1))))
-
 
     if ax is None:
         _, ax = plt.subplots(figsize=(figure_size, figure_size), constrained_layout=True)
@@ -221,7 +221,7 @@ def _plot_heatmap(
     if show:
         plt.show()
     if save_path is not None:
-        #check if the directory exists, create it if not
+        # check if the directory exists, create it if not
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
 
@@ -348,20 +348,13 @@ class SimulationStepResult:
         import pyarrow as pa
         import pyarrow.parquet as pq
 
-        rows = [
-            (rule, winner)
-            for rule, winners in self.winners_by_rule.items()
-            for winner in winners
-        ]
-        df = pd.DataFrame(rows, columns=["Rule", "Winner"])
+        rows = [(rule, winner) for rule, winners in self.winners_by_rule.items() for winner in winners]
+        df = pd.DataFrame(rows, columns=pd.Index(["Rule", "Winner"]))
         table = pa.Table.from_pandas(df, preserve_index=False)
 
         # Inject config into schema metadata (prefixed to avoid collisions).
         existing_meta = table.schema.metadata or {}
-        config_meta = {
-            f"vote_sim:{k}".encode(): v.encode()
-            for k, v in self.config.to_dict().items()
-        }
+        config_meta = {f"vote_sim:{k}".encode(): v.encode() for k, v in self.config.to_dict().items()}
         table = table.replace_schema_metadata({**existing_meta, **config_meta})
 
         os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
@@ -434,10 +427,7 @@ class SimulationStepResult:
         metrics = ""
         if n >= 2:
             r1, r2, d = self.most_distant_rules
-            metrics = (
-                f"\nMean distance: {self.mean_distance:.4f}"
-                f"\nMost distant: {r1} <-> {r2} ({d:.4f})"
-            )
+            metrics = f"\nMean distance: {self.mean_distance:.4f}\nMost distant: {r1} <-> {r2} ({d:.4f})"
 
         return (
             f"{header}\n"
@@ -717,7 +707,7 @@ class SimulationSeriesResult:
             self.save_to_file(parquet_path)
 
         return result
-    
+
     def map_rules_2d(self) -> MdsProjection:
         """Project rules into 2D using Multi-Dimensional Scaling (MDS).
 
@@ -737,10 +727,12 @@ class SimulationSeriesResult:
         from sklearn.manifold import MDS
 
         distance_matrix = self.mean_distance_matrix
-        mds = MDS(n_components=2, metric="precomputed", random_state=42, normalized_stress="auto", n_init=4, init="random")
+        mds = MDS(
+            n_components=2, metric="precomputed", random_state=42, normalized_stress="auto", n_init=4, init="random"
+        )
         coords = mds.fit_transform(distance_matrix)
         return MdsProjection(coords=coords, stress=float(mds.stress_))
-    
+
     def map_rules_3d(self) -> MdsProjection:
         """Project rules into 3D using Multi-Dimensional Scaling (MDS).
 
@@ -760,10 +752,12 @@ class SimulationSeriesResult:
         from sklearn.manifold import MDS
 
         distance_matrix = self.mean_distance_matrix
-        mds = MDS(n_components=3, metric="precomputed", random_state=42, normalized_stress="auto", n_init=4, init="random")
+        mds = MDS(
+            n_components=3, metric="precomputed", random_state=42, normalized_stress="auto", n_init=4, init="random"
+        )
         coords = mds.fit_transform(distance_matrix)
         return MdsProjection(coords=coords, stress=float(mds.stress_))
-    
+
     def plot_rules_3d(
         self,
         ax: Any | None = None,
@@ -781,8 +775,9 @@ class SimulationSeriesResult:
                 when *None*.
             show: Whether to call ``plt.show()`` at the end.
             save_path: Optional path (file or directory) to save the plot."""
-        
+
         import matplotlib.pyplot as plt
+        from matplotlib.figure import Figure as MplFigure
         from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
         projection = self.map_rules_3d()
@@ -836,7 +831,9 @@ class SimulationSeriesResult:
                 save_path,
                 f"{self._iteration_count}_rules_3d.png",
             )
-            ax.figure.savefig(resolved)
+            fig = ax.get_figure()
+            if isinstance(fig, MplFigure):
+                fig.savefig(resolved)
             # Auto-save series parquet alongside the plot
             parquet_path = os.path.join(
                 os.path.dirname(resolved),
@@ -871,6 +868,7 @@ class SimulationSeriesResult:
             The matplotlib Axes used for plotting."""
 
         import matplotlib.pyplot as plt
+        from matplotlib.figure import Figure as MplFigure
 
         projection = self.map_rules_2d()
         coords, stress = projection.coords, projection.stress
@@ -920,7 +918,9 @@ class SimulationSeriesResult:
                 save_path,
                 f"{self._iteration_count}_rules_2d.png",
             )
-            ax.figure.savefig(resolved)
+            fig = ax.get_figure()
+            if isinstance(fig, MplFigure):
+                fig.savefig(resolved)
             # Auto-save series parquet alongside the plot
             parquet_path = os.path.join(
                 os.path.dirname(resolved),
@@ -958,24 +958,23 @@ class SimulationSeriesResult:
             nc = ",".join(str(c) for c in sorted(step.config.n_candidates)) if step.config.n_candidates else ""
             for rule, winners in step.winners_by_rule.items():
                 for winner in winners:
-                    rows.append({
-                        "DataSource": step.data_source,
-                        "GenModel": gm,
-                        "NVoters": nv,
-                        "NCandidates": nc,
-                        "Rule": rule,
-                        "Winner": winner,
-                    })
+                    rows.append(
+                        {
+                            "DataSource": step.data_source,
+                            "GenModel": gm,
+                            "NVoters": nv,
+                            "NCandidates": nc,
+                            "Rule": rule,
+                            "Winner": winner,
+                        }
+                    )
 
         df = pd.DataFrame(rows)
         table = pa.Table.from_pandas(df, preserve_index=False)
 
         # Store aggregated config in schema metadata
         existing_meta = table.schema.metadata or {}
-        config_meta = {
-            f"vote_sim:{k}".encode(): v.encode()
-            for k, v in self._config.to_dict().items()
-        }
+        config_meta = {f"vote_sim:{k}".encode(): v.encode() for k, v in self._config.to_dict().items()}
         table = table.replace_schema_metadata({**existing_meta, **config_meta})
 
         os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
@@ -1027,7 +1026,8 @@ class SimulationSeriesResult:
                 )
 
             step_result = SimulationStepResult(
-                data_source=str(data_source), config=step_config,
+                data_source=str(data_source),
+                config=step_config,
             )
             for rule, winners in group.groupby("Rule", sort=False)["Winner"]:
                 step_result.add_method_result(str(rule), winners.tolist())

@@ -213,7 +213,9 @@ def simulation_from_config(config_path: str) -> None:
             for n_v in config.voters or []:
                 for n_c in config.candidates or []:
                     step_cfg = ResultConfig.single(
-                        gen_model=model, n_voters=n_v, n_candidates=n_c,
+                        gen_model=model,
+                        n_voters=n_v,
+                        n_candidates=n_c,
                     )
                     for it in range(config.iterations):
                         # 1) Obtain data
@@ -239,15 +241,16 @@ def simulation_from_config(config_path: str) -> None:
 
     print("Full simulation completed.")
 
+
 def simulation_instance(
-        gen_code: str,
-        n_v: int,
-        n_c: int,
-        rule_codes: list[str],
-        n_iteration: int = 1000,
-        seed: int = 161,
-        base_path: str = "data",
-    ) -> SimulationSeriesResult:
+    gen_code: str,
+    n_v: int,
+    n_c: int,
+    rule_codes: list[str],
+    n_iteration: int = 1000,
+    seed: int = 161,
+    base_path: str = "data",
+) -> SimulationSeriesResult:
     """Run the workflow on a single (model, voters, candidates) instance.
 
     Each step receives a :class:`ResultConfig` so that the series
@@ -283,13 +286,9 @@ def simulation_instance(
         cached = SimulationSeriesResult()
         cached.load_from_file(str(cache_path))
         if cached.step_count == n_iteration:
-            print(
-                f"Cache hit: loaded {cached.step_count} steps from {cache_path}"
-            )
+            print(f"Cache hit: loaded {cached.step_count} steps from {cache_path}")
             return cached
-        print(
-            f"Cache stale ({cached.step_count} steps vs {n_iteration} requested) — re-running."
-        )
+        print(f"Cache stale ({cached.step_count} steps vs {n_iteration} requested) — re-running.")
 
     print(f"Running simulation: {step_config.description} × {n_iteration} iterations")
     series = SimulationSeriesResult()
@@ -314,15 +313,12 @@ def simulation_instance(
     return series
 
 
-
 def simulation_full(config_path: str) -> None:
     """Full pipeline: generate profiles, apply rules, save results.
 
     Alias for :func:`simulation_from_config`.
     """
     return simulation_from_config(config_path)
-
-
 
 
 def simulation_from_file(file_path: str, rule_codes: list[str]) -> SimulationStepResult:

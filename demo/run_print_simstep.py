@@ -1,6 +1,7 @@
-from vote_simulation.models.rules.registry import make_rule_builder, register_rule
 from svvamp import RuleApproval, RuleKApproval
-from vote_simulation.simulation.simulation import simulation_from_file, simulation_instance, simulation_series
+
+from vote_simulation.models.rules.registry import make_rule_builder, register_rule
+from vote_simulation.simulation.simulation import simulation_instance
 
 if __name__ == "__main__":
     register_rule("AP_K2", make_rule_builder(lambda profile: RuleKApproval(k=2)(profile)))
@@ -19,7 +20,7 @@ if __name__ == "__main__":
     register_rule("AP_T07", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.7)(profile)))
     register_rule("AP_T08", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.8)(profile)))
     register_rule("AP_T09", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.9)(profile)))
-    
+
     rules_codes = [
         "RV",
         "MJ",
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     print(f" Mean distance: {first_step.mean_distance:.4f}")
     sr1, sr2, sd = first_step.most_distant_rules
     print(f" Most distant pair:  {sr1} <-> {sr2}  ({sd:.4f})")
-    
+
     # 5) Save & reload (round-trip demo)
     import os
 
@@ -91,6 +92,7 @@ if __name__ == "__main__":
     print(f"\n  Series saved to {save_path}  ({os.path.getsize(save_path) / 1024:.1f} KB)")
 
     from vote_simulation.models.simulation_result import SimulationSeriesResult
+
     loaded = SimulationSeriesResult()
     loaded.load_from_file(save_path)
     print(f"  Loaded back: {loaded.step_count} steps, config = {loaded.config.label}")
@@ -110,4 +112,4 @@ if __name__ == "__main__":
     deleted = SimulationSeriesResult.delete_file(save_path)
     print(f"\n  Deleted {save_path}: {deleted}")
     series.save_to_file(save_path)
-    print(f"  Re-saved for future use.")
+    print("  Re-saved for future use.")

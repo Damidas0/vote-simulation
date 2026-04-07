@@ -61,7 +61,7 @@ class DataInstance:
         dmax: float = float(data.max())
         spread = dmax - dmin
         if spread > 0.0:
-            normalized = (data - dmin) * (1.0 / spread)   # one division
+            normalized = (data - dmin) * (1.0 / spread)  # one division
         else:
             # all utilities identical → perfect indifference
             normalized = np.full_like(data, 0.5)
