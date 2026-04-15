@@ -28,6 +28,7 @@ def test_wrong_file_format():
     """test for unsupported file format"""
     return  # TODO: implement test for wrong file format
 
+
 def test_ties_cases():
     """test if ties are properly handled"""
 

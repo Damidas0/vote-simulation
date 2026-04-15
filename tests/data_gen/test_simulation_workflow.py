@@ -98,7 +98,7 @@ class TestObtainDataInstance:
         np.testing.assert_array_almost_equal(di1.data, di2.data)
 
 
-#  generate_data 
+#  generate_data
 
 
 class TestGenerateData:
@@ -142,7 +142,8 @@ class TestGenerateData:
             generate_data(str(cfg))
 
 
-#  simulation_full 
+#  simulation_full
+
 
 class TestSimulationFull:
     """Integration test: generate → run rules → save results."""

@@ -17,7 +17,6 @@ if __name__ == "__main__":
 
     candidates = ["A", "B", "C"]
 
-
     rules_codes = get_all_rules_codes()
 
     result = simulation_step(profile, rules_codes)
@@ -27,4 +26,3 @@ if __name__ == "__main__":
         if rule_code == "L4VD":
             continue
         assert rule_result == ["A", "B", "C"], f"Rule {rule_code} did not handle ties correctly"
-    

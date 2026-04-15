@@ -175,6 +175,7 @@ def get_all_rules_codes() -> list[str]:
     """Return a list of all registered rule codes."""
     return sorted(_RULE_BUILDERS.keys())
 
+
 def make_rule_builder(rule_factory: Callable[[Profile], Any]) -> RuleBuilder:
     """Create a public `RuleBuilder` from a `Profile -> rule result` factory.
 
@@ -214,8 +215,6 @@ def get_rule_builder(code: str) -> RuleBuilder:
     except KeyError as error:
         available = ", ".join(sorted(_RULE_BUILDERS))
         raise ValueError(f"Unknown rule code: '{code}'. Available codes: {available}") from error
-    
-
 
 
 register_rule("PLU1", _build_with_rule(lambda profile: RulePlurality()(profile)))

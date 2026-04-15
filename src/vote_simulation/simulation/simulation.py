@@ -53,6 +53,7 @@ def _iter_filename(iteration: int) -> str:
 
 # data obtain-or-generate
 
+
 def obtain_data_instance(
     model: str,
     n_v: int,
@@ -188,9 +189,11 @@ def generate_data(config_path: str) -> list[str]:
     return paths
 
 
-def simulation_step(profile: Profile, rule_codes: list[str], config: ResultConfig | None = None) -> SimulationStepResult:
+def simulation_step(
+    profile: Profile, rule_codes: list[str], config: ResultConfig | None = None
+) -> SimulationStepResult:
     """Run a single profile through all rules and return a :class:`SimulationStepResult`.
-    
+
     Args:
         profile: The profile data to run the rules on.
         candidates: List of candidate names.
@@ -200,13 +203,10 @@ def simulation_step(profile: Profile, rule_codes: list[str], config: ResultConfi
     step_config = config or ResultConfig()
 
     data = DataInstance.from_profile(profile)
-    
 
     step_result = run_rules_on_instance(data, rule_codes, config=step_config)
 
     return step_result
-
-
 
 
 def simulation_from_config(config_path: str) -> None:

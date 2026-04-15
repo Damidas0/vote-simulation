@@ -4,7 +4,6 @@ from vote_simulation.models.rules.registry import make_rule_builder, register_ru
 from vote_simulation.simulation.simulation import simulation_instance
 
 if __name__ == "__main__":
-
     rules_codes = [
         "RV",
         "MJ",
