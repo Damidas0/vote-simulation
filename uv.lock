@@ -1274,6 +1274,8 @@ name = "vote-simulation"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "rich" },
@@ -1307,6 +1309,8 @@ typecheck = [
 
 [package.metadata]
 requires-dist = [
+    { name = "matplotlib", specifier = ">=3.9.0" },
+    { name = "numpy", specifier = ">=2.0.0" },
     { name = "pandas", specifier = ">=2.2.0" },
     { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "rich" },

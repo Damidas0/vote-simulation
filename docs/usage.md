@@ -53,46 +53,17 @@ print(paths[:3])
 
 This is useful when you want to inspect or reuse generated datasets before running rules.
 
-## Run rules on one existing file
-
-If your config points to a single `data_path`, you can run the legacy single-file simulation mode:
-
-```python
-from vote_simulation.simulation import simulation
-
-result = simulation("config/single_file.toml")
-print(result.winners_by_rule)
-```
 
 Expected config shape:
 
 ```toml
 [simulation]
-data_path = "../data/sample_votes.csv"
 rule_codes = ["PLU1", "BORD", "SCHU"]
 output_base_path = "../data"
 ```
 
 The result is written under `data/sim/`.
 
-## Run rules on a folder of files
-
-To process every CSV or Parquet file in a directory:
-
-```python
-from vote_simulation.simulation import simulation_batch
-
-simulation_batch("config/batch.toml")
-```
-
-Expected config shape:
-
-```toml
-[simulation]
-input_folder_path = "../data/my_profiles"
-rule_codes = ["PLU1", "BORD"]
-output_base_path = "../data"
-```
 
 ## Example generative configuration
 
@@ -125,11 +96,6 @@ vmf_concentration = 10.0
 - `candidates`: candidate counts to evaluate.
 - `iterations`: number of repetitions for each combination.
 - `generator_params`: optional per-generator parameters.
-
-### Existing data modes
-
-- `data_path`: path to one CSV or Parquet file.
-- `input_folder_path`: path to a folder of CSV or Parquet files.
 
 ## Output structure
 

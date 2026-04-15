@@ -21,8 +21,10 @@ license = {text = "MIT"}
 dependencies = [
   "typer",
   "rich",
+    "numpy>=2.0.0",
   "pyarrow>=23.0.1",
   "pandas>=2.2.0",
+    "matplotlib>=3.9.0",
   "svvamp>=0.13.0",
   "tqdm>=4.67.3",
   "scikit-learn>=1.8.0",

@@ -8,10 +8,11 @@ from vote_simulation.models.data_generation.generator_registry import (
     _GENERATOR_BUILDERS,
     get_generator_builder,
     list_generator_codes,
+    make_generator_builder,
     register_generator,
 )
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Registry ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Registry
 
 
 class TestGeneratorRegistry:
@@ -19,9 +20,11 @@ class TestGeneratorRegistry:
 
     def test_list_codes_not_empty(self):
         codes = list_generator_codes()
-        assert len(codes) >= 11  # all built-in models
+        assert len(codes) >= 15  # all built-in models (incl. EUCLID_*D)
         assert "UNI" in codes
         assert "IC" in codes
+        for dim_code in ("EUCLID_1D", "EUCLID_2D", "EUCLID_3D", "EUCLID_5D"):
+            assert dim_code in codes
 
     def test_get_unknown_code_raises(self):
         with pytest.raises(ValueError, match="Unknown generator code"):
@@ -48,7 +51,7 @@ class TestGeneratorRegistry:
         assert callable(builder)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━ Generator builders ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Generator builders
 
 
 class TestBuiltinGenerators:
@@ -64,6 +67,10 @@ class TestBuiltinGenerators:
             "IC",
             "IANC",
             "EUCLID",
+            "EUCLID_1D",
+            "EUCLID_2D",
+            "EUCLID_3D",
+            "EUCLID_5D",
             "GAUSS",
             "LADDER",
             "SPHEROID",
@@ -88,7 +95,27 @@ class TestBuiltinGenerators:
         assert profile.labels_candidates == ["Candidate 1", "Candidate 2", "Candidate 3"]
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━ Reproducibility ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class TestMakeGeneratorBuilder:
+    """Tests for the make_generator_builder helper."""
+
+    def test_custom_builder_correct_shape(self):
+        from svvamp import GeneratorProfileEuclideanBox
+
+        builder = make_generator_builder(GeneratorProfileEuclideanBox, box_dimensions=[1.0, 1.0, 1.0, 1.0])
+        profile = builder(n_v=20, n_c=5, seed=7)
+        assert profile.preferences_ut.shape == (20, 5)
+        assert profile.labels_candidates == [f"Candidate {i + 1}" for i in range(5)]
+
+    def test_caller_can_override_defaults(self):
+        from svvamp import GeneratorProfileEuclideanBox
+
+        builder = make_generator_builder(GeneratorProfileEuclideanBox, box_dimensions=[1.0])
+        # Override box_dimensions at call time
+        profile = builder(n_v=10, n_c=3, seed=0, box_dimensions=[2.0, 3.0])
+        assert profile.preferences_ut.shape == (10, 3)
+
+
+#  Reproducibility
 
 
 class TestReproducibility:
@@ -107,7 +134,7 @@ class TestReproducibility:
         assert not np.array_equal(p1.preferences_ut, p2.preferences_ut)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━ DataInstance.from_generator ━━━━━━━━━━━━━━━━━━━━
+# DataInstance.from_generator
 
 
 class TestDataInstanceFromGenerator:
@@ -125,7 +152,7 @@ class TestDataInstanceFromGenerator:
         assert di.file_path == ""
 
 
-# ━━━━━━━━━━━━━━━━━━━━━ Parquet round-trip ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Parquet round-trip
 
 
 class TestParquetRoundTrip:

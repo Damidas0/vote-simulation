@@ -12,14 +12,13 @@ class SimulationConfig:
     """Validated simulation configuration."""
 
     rule_codes: list[str]
-    data_path: str | None = None  # optional, if not provided, data will be generated
     candidates: list[int] | None = None
     voters: list[int] | None = None
     iterations: int = 1
     seed: int = 0
-    input_folder_path: str | None = None  # optional, for batch simulation on multiple files
     generative_models: list[str] = field(default_factory=list)  # e.g. ["UNI", "IC"]
     output_base_path: str = "data"  # root folder for gen/ and sim_result/
+    input_folder_path: str | None = None  # folder with pre-existing vote files for batch mode
     generator_params: dict[str, dict[str, object]] = field(default_factory=dict)  # per-model extra params
 
 
@@ -42,6 +41,7 @@ def load_simulation_config(config_path: str | Path = DEFAULT_CONFIG_PATH) -> Sim
     if not isinstance(simulation, dict):
         raise ValueError("Invalid configuration: missing [simulation] section")
 
+    # Check validity of rules codes
     rule_codes = simulation.get("rule_codes")
     if not isinstance(rule_codes, list) or not rule_codes:
         raise ValueError("Invalid configuration: simulation.rule_codes must be a non-empty list")
@@ -50,6 +50,7 @@ def load_simulation_config(config_path: str | Path = DEFAULT_CONFIG_PATH) -> Sim
     if not normalized_rule_codes:
         raise ValueError("Invalid configuration: simulation.rule_codes cannot be empty")
 
+    # Check validity of candidates, voters, iterations
     candidates = simulation.get("candidates")
     if candidates is not None:
         if not isinstance(candidates, list) or not candidates:
@@ -68,29 +69,10 @@ def load_simulation_config(config_path: str | Path = DEFAULT_CONFIG_PATH) -> Sim
     if not isinstance(iterations, int) or iterations <= 0:
         raise ValueError("Invalid configuration: simulation.iterations must be a positive integer")
 
+    # Check validity of seed
     seed = simulation.get("seed", 0)
     if not isinstance(seed, int) or seed < 0:
         raise ValueError("Invalid configuration: simulation.seed must be a non-negative integer")
-
-    data_path = simulation.get("data_path", simulation.get("data_file"))
-    if data_path is not None and (not isinstance(data_path, str) or not data_path.strip()):
-        raise ValueError("Invalid configuration: simulation.data_path must be a non-empty string if provided")
-    if isinstance(data_path, str):
-        data_path = (
-            str((path.parent / data_path).resolve())
-            if not Path(data_path).is_absolute()
-            else str(Path(data_path).resolve())
-        )
-
-    input_folder_path = simulation.get("input_folder_path")
-    if input_folder_path is not None and (not isinstance(input_folder_path, str) or not input_folder_path.strip()):
-        raise ValueError("Invalid configuration: simulation.input_folder_path must be a non-empty string if provided")
-    if isinstance(input_folder_path, str):
-        input_folder_path = (
-            str((path.parent / input_folder_path).resolve())
-            if not Path(input_folder_path).is_absolute()
-            else str(Path(input_folder_path).resolve())
-        )
 
     # --- Generative models ---
     raw_gen_models = simulation.get("generative_models")
@@ -115,15 +97,22 @@ def load_simulation_config(config_path: str | Path = DEFAULT_CONFIG_PATH) -> Sim
             if isinstance(params, dict):
                 generator_params[model_key.strip().upper()] = dict(params)
 
+    # --- Input folder path (optional, for batch mode) ---
+    raw_input_folder = simulation.get("input_folder_path")
+    input_folder_path: str | None = None
+    if raw_input_folder is not None:
+        input_folder_path = str(raw_input_folder).strip() or None
+        if input_folder_path and not Path(input_folder_path).is_absolute():
+            input_folder_path = str((path.parent / input_folder_path).resolve())
+
     return SimulationConfig(
-        data_path=data_path,
         rule_codes=normalized_rule_codes,
         candidates=candidates,
         voters=voters,
         iterations=iterations,
         seed=seed,
-        input_folder_path=input_folder_path,
         generative_models=generative_models,
         output_base_path=output_base_path,
+        input_folder_path=input_folder_path,
         generator_params=generator_params,
     )

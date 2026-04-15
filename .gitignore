@@ -9,6 +9,7 @@ __pycache__/
 # Data / config files 
 CHANGELOG/
 data/
+demo/results/
 
 # Distribution / packaging
 build/

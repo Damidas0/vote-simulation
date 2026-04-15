@@ -29,11 +29,13 @@ The full workflow is:
 Legacy single-file and batch modes write their outputs under `sim/`.
 
 ## Main public entry points
+- `obtain_data_instance()` retrieve (from storage or generation)
+- `run_rules_on_instance()` apply SRC on DataInstance
+- `
 
 - `generate_data()` for generation only
 - `simulation_full()` for the full pipeline
 - `simulation()` for one file
-- `simulation_batch()` for one folder
 - `obtain_data_instance()` for the cache-or-generate step
 
 ## Configuration reference

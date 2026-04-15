@@ -22,13 +22,15 @@ The directory layout follows::
 
 from __future__ import annotations
 
+from svvamp import Profile
 from pathlib import Path
 
 from tqdm import tqdm
 
 from vote_simulation.models.data_generation.data_instance import DataInstance
+from vote_simulation.models.results.series_result import ResultConfig, SimulationSeriesResult, SimulationStepResult
+from vote_simulation.models.results.total_result import SimulationTotalResult
 from vote_simulation.models.rules import RuleResult, get_rule_builder
-from vote_simulation.models.simulation_result import SimulationStepResult
 from vote_simulation.simulation.configuration import SimulationConfig, load_simulation_config
 
 # utils
@@ -49,23 +51,31 @@ def _iter_filename(iteration: int) -> str:
     return f"iter_{iteration + 1:04d}.parquet"
 
 
-# ---------------------------------------------------- data obtain-or-generate
-
+# data obtain-or-generate
 
 def obtain_data_instance(
     model: str,
     n_v: int,
     n_c: int,
     *,
-    iteration: int,
-    seed: int,
-    base_path: str,
+    iteration: int = 0,
+    seed: int = 161,
+    base_path: str = "data",
     extra_params: dict[str, object] | None = None,
 ) -> DataInstance:
     """Load a cached profile or generate + persist it.
 
     If the parquet file already exists the profile is loaded from disk;
     otherwise it is generated and saved for future reuse.
+
+    Args:
+        model: Generative model code (e.g. "UNI", "IC").
+        n_v: Number of voters.
+        n_c: Number of candidates.
+        iteration: Iteration index.
+        seed: Random seed for generation (will be combined with iteration index for variability).
+        base_path: Root folder for generated data (see config.output_base_path).
+        extra_params: Optional dict of extra parameters to pass to the generator (per-model).
     """
     gen_path = _gen_dir(base_path, model, n_v, n_c) / _iter_filename(iteration)
 
@@ -86,16 +96,24 @@ def obtain_data_instance(
     return di
 
 
-# apply rules to a DI
-
-
 def run_rules_on_instance(
     data_instance: DataInstance,
     rule_codes: list[str],
+    config: ResultConfig | None = None,
 ) -> SimulationStepResult:
-    """Apply every rule and collect winners into a ``SimulationStepResult``."""
+    """
+    Apply every rule and collect winners into a ``SimulationStepResult``.
+
+    Args:
+        data_instance: The profile data to run the rules on.
+        rule_codes: List of rule codes to apply (e.g. ["RV", "MJ", "AP_T"]).
+        config: Optional :class:`ResultConfig` attached to the step.
+    """
     profile = data_instance.profile
-    step = SimulationStepResult(data_source=data_instance.file_path)
+    step = SimulationStepResult(
+        data_source=data_instance.file_path,
+        config=config or ResultConfig(),
+    )
 
     for code in rule_codes:
         normalized = code.strip().upper()
@@ -134,28 +152,8 @@ def sim(file_path: str, rule_code: str) -> None:
         print(f"Error building rule '{rule_code}': {e}")
 
 
-def simulation(config_path: str) -> SimulationStepResult:
-    """Run the vote simulation on a *single* data file (legacy behaviour)."""
-    config = load_simulation_config(config_path)
-
-    if config.data_path is None:
-        raise ValueError("Configuration must include data_path for simulation")
-
-    data_instance = DataInstance(config.data_path)
-    step_result = run_rules_on_instance(data_instance, config.rule_codes)
-
-    output_dir = Path(config.output_base_path) / "sim"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    from datetime import UTC, datetime
-
-    timestamp = datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
-    output_file = output_dir / f"simulation_{timestamp}.parquet"
-    step_result.save_to_file(str(output_file))
-    print(f"Saved simulation step to: {output_file}")
-    return step_result
-
-
-#  generate
+#  generate data
+# --------------------------------------------------------------------------
 
 
 def generate_data(config_path: str) -> list[str]:
@@ -190,7 +188,25 @@ def generate_data(config_path: str) -> list[str]:
     return paths
 
 
-# full pipeline
+def simulation_step(profile: Profile, rule_codes: list[str], config: ResultConfig | None = None) -> SimulationStepResult:
+    """Run a single profile through all rules and return a :class:`SimulationStepResult`.
+    
+    Args:
+        profile: The profile data to run the rules on.
+        candidates: List of candidate names.
+        rule_codes: List of rule codes to apply (e.g. ["RV", "MJ", "AP_T"]).
+        config: Optional :class:`ResultConfig` attached to the step.
+    """
+    step_config = config or ResultConfig()
+
+    data = DataInstance.from_profile(profile)
+    
+
+    step_result = run_rules_on_instance(data, rule_codes, config=step_config)
+
+    return step_result
+
+
 
 
 def simulation_from_config(config_path: str) -> None:
@@ -200,6 +216,9 @@ def simulation_from_config(config_path: str) -> None:
     1. Obtain (generate or load) the profile.
     2. Run all requested rules.
     3. Save the result in ``sim_result/<MODEL>_v<NV>_c<NC>/iter_XXXX.parquet``.
+
+    Args:
+        config_path: Path to the TOML configuration file (see docs for the template).
     """
     config = load_simulation_config(config_path)
     _validate_generation_config(config)
@@ -212,8 +231,13 @@ def simulation_from_config(config_path: str) -> None:
             extra = config.generator_params.get(model, {})
             for n_v in config.voters or []:
                 for n_c in config.candidates or []:
+                    step_cfg = ResultConfig.single(
+                        gen_model=model,
+                        n_voters=n_v,
+                        n_candidates=n_c,
+                    )
                     for it in range(config.iterations):
-                        # Obtain data
+                        # 1) Obtain data
                         di = obtain_data_instance(
                             model=model,
                             n_v=n_v,
@@ -225,7 +249,7 @@ def simulation_from_config(config_path: str) -> None:
                         )
 
                         # 2) Apply rules
-                        step = run_rules_on_instance(di, config.rule_codes)
+                        step = run_rules_on_instance(di, config.rule_codes, config=step_cfg)
 
                         # 3) Save result
                         result_path = _sim_dir(config.output_base_path, model, n_v, n_c) / _iter_filename(it)
@@ -237,53 +261,121 @@ def simulation_from_config(config_path: str) -> None:
     print("Full simulation completed.")
 
 
-def simulation_full(config_path: str) -> None:
-    """Full pipeline: generate profiles, apply rules, save results.
+def simulation_instance(
+    gen_code: str,
+    n_v: int,
+    n_c: int,
+    rule_codes: list[str],
+    n_iteration: int = 1000,
+    seed: int = 161,
+    base_path: str = "data",
+    reload: bool = False,
+) -> SimulationSeriesResult:
+    """Run the workflow on a single (model, voters, candidates) instance.
 
-    Alias for :func:`simulation_from_config`.
+    Each step receives a :class:`ResultConfig` so that the series
+    automatically aggregates the simulation context.
+
+    Before running, checks if a cached result already exists at
+    ``<base_path>/results/<config_label>.parquet``.  When found (and the
+    step count matches *n_iteration*), the cached series is returned
+    directly, skipping re-computation.
+
+    Args:
+        gen_code: Generative model code (list can be found in doc).
+        n_v: Number of voters.
+        n_c: Number of candidates.
+        rule_codes: List of rule codes to apply.
+        n_iteration: Number of iterations. Defaults to 1000.
+        seed: Seed for reproducibility. Defaults to 161.
+        base_path: Root folder for generated data. Defaults to ``"data"``.
+
+    Returns:
+        SimulationSeriesResult with attached :attr:`config`.
     """
-    return simulation_from_config(config_path)
+    step_config = ResultConfig.single(
+        gen_model=gen_code.strip().upper(),
+        n_voters=n_v,
+        n_candidates=n_c,
+        n_iterations=n_iteration,
+    )
+
+    # --- Cache check ---
+    cache_path = Path(base_path) / "results" / f"{step_config.label}.parquet"
+    if not reload:
+        cache_path = Path(base_path) / "results" / f"{step_config.label}.parquet"
+        if cache_path.is_file():
+            cached = SimulationSeriesResult()
+            cached.load_from_file(str(cache_path))
+            if cached.step_count == n_iteration:
+                print(f"Cache hit: loaded {cached.step_count} steps from {cache_path}")
+                return cached
+            print(f"Cache stale ({cached.step_count} steps vs {n_iteration} requested) — re-running.")
+
+    print(f"Running simulation: {step_config.description} × {n_iteration} iterations")
+    series = SimulationSeriesResult()
+    with tqdm(total=n_iteration, desc="Simulating") as pbar:
+        for it in range(n_iteration):
+            di = obtain_data_instance(
+                model=gen_code,
+                n_v=n_v,
+                n_c=n_c,
+                iteration=it,
+                seed=seed,
+                base_path=base_path,
+            )
+            step = run_rules_on_instance(di, rule_codes, config=step_config)
+            series.add_step(step)
+            pbar.update(1)
+
+    # --- Persist for future cache hits ---
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    series.save_to_file(str(cache_path))
+    print(f"Simulation completed — cached to {cache_path}")
+    return series
 
 
-def simulation_batch(config_path: str) -> None:
-    """Run vote simulations on all files in a folder specified in the configuration."""
+def simulation_series_from_config(config_path: str, reload: bool = False) -> SimulationTotalResult:
+    """Run simulation instances for every combination in the config.
+
+    Iterates over each ``(model, n_voters, n_candidates)`` triplet defined
+    in the TOML configuration, delegates to :func:`simulation_instance`,
+    and collects all resulting series into a :class:`SimulationTotalResult`.
+
+    Args:
+        config_path: Path to the TOML configuration file.
+
+    Returns:
+        A :class:`SimulationTotalResult` containing one series per
+        ``(model, voters, candidates)`` combination.
+    """
     config = load_simulation_config(config_path)
+    _validate_generation_config(config)
 
-    if not config.input_folder_path:
-        raise ValueError(
-            "Configuration does not contain 'input_folder_path' parameter. Please add it to run batch simulations."
-        )
+    total_result = SimulationTotalResult()
+    n_combos = len(config.generative_models) * len(config.voters or []) * len(config.candidates or [])
+    with tqdm(total=n_combos, desc="Running simulation series") as pbar:
+        for model in config.generative_models:
+            for n_v in config.voters or []:
+                for n_c in config.candidates or []:
+                    series = simulation_instance(
+                        gen_code=model,
+                        n_v=n_v,
+                        n_c=n_c,
+                        rule_codes=config.rule_codes,
+                        n_iteration=config.iterations,
+                        seed=config.seed,
+                        base_path=config.output_base_path,
+                        reload=reload,
+                    )
+                    total_result.add_series(series)
+                    pbar.update(1)
 
-    input_folder = Path(config.input_folder_path)
-    if not input_folder.is_dir():
-        raise ValueError(f"Input folder not found: {input_folder}")
-
-    data_files = list(input_folder.glob("*.csv")) + list(input_folder.glob("*.parquet"))
-    if not data_files:
-        print(f"No CSV or Parquet files found in {input_folder}")
-        return
-
-    print(f"Found {len(data_files)} data files to process in {input_folder}")
-
-    output_dir = Path(config.output_base_path) / "sim"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    for file_path in tqdm(sorted(data_files)):
-        try:
-            data_instance = DataInstance(str(file_path))
-        except Exception:
-            continue
-
-        step_result = run_rules_on_instance(data_instance, config.rule_codes)
-        output_file = output_dir / f"simulation_{file_path.stem}.parquet"
-        step_result.save_to_file(str(output_file))
-
-    print(f"\n{'=' * 60}")
-    print("Batch simulation completed")
-    print(f"{'=' * 60}")
+    print(f"Completed {total_result.series_count} simulation series.")
+    return total_result
 
 
-# ----------------------------------------------------------- validation
+# validation
 
 
 def _validate_generation_config(config: SimulationConfig) -> None:

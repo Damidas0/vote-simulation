@@ -6,7 +6,6 @@
 
 ## Simulation result models
 
-::: vote_simulation.models.simulation_result
 
 ## Rule registry
 
