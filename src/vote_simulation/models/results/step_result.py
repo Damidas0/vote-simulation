@@ -1,28 +1,17 @@
-
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
-
-
 from dataclasses import dataclass, field
 from textwrap import indent
-from typing import Any, NamedTuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
-from vote_simulation.models.results.utils import _plot_heatmap
-from vote_simulation.models.results.result_config import ResultConfig
 
 from vote_simulation.models.distance import Distance
-from vote_simulation.models.results.result_config import ResultConfig
 from vote_simulation.models.distance.distance import JaccardDistance
-
-
-
-
-
-
+from vote_simulation.models.results.result_config import ResultConfig
+from vote_simulation.models.results.utils import _plot_heatmap
 
 
 @dataclass(slots=True)
@@ -334,4 +323,3 @@ class SimulationStepResult:
             distance = metric.compute(winner_set, self._winner_sets_by_rule[other_rule])
             self._distance_matrix[row_index, other_index] = distance
             self._distance_matrix[other_index, row_index] = distance
-

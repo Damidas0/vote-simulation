@@ -33,7 +33,7 @@ IMG_DIR.mkdir(parents=True, exist_ok=True)
 SKIP_CODES: set[str] = {"IANC"}
 
 
-# ── core plotting helper ────────────────────────────────────────────
+# core plotting helper
 def generate_plots(
     gen_code: str,
     n_v: int = 1000,
@@ -71,7 +71,7 @@ def generate_plots(
     return plot3_path, mds_path
 
 
-# ── run on all generators ───────────────────────────────────────────
+#  run on all generators
 def generate_all(
     n_v: int = 1000,
     n_c: int = 3,

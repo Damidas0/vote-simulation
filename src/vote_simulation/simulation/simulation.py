@@ -22,13 +22,15 @@ The directory layout follows::
 
 from __future__ import annotations
 
+from svvamp import Profile
 from pathlib import Path
 
 from tqdm import tqdm
 
 from vote_simulation.models.data_generation.data_instance import DataInstance
-from vote_simulation.models.rules import RuleResult, get_rule_builder
 from vote_simulation.models.results.series_result import ResultConfig, SimulationSeriesResult, SimulationStepResult
+from vote_simulation.models.results.total_result import SimulationTotalResult
+from vote_simulation.models.rules import RuleResult, get_rule_builder
 from vote_simulation.simulation.configuration import SimulationConfig, load_simulation_config
 
 # utils
@@ -50,7 +52,6 @@ def _iter_filename(iteration: int) -> str:
 
 
 # data obtain-or-generate
-
 
 def obtain_data_instance(
     model: str,
@@ -187,7 +188,25 @@ def generate_data(config_path: str) -> list[str]:
     return paths
 
 
-# full pipeline
+def simulation_step(profile: Profile, rule_codes: list[str], config: ResultConfig | None = None) -> SimulationStepResult:
+    """Run a single profile through all rules and return a :class:`SimulationStepResult`.
+    
+    Args:
+        profile: The profile data to run the rules on.
+        candidates: List of candidate names.
+        rule_codes: List of rule codes to apply (e.g. ["RV", "MJ", "AP_T"]).
+        config: Optional :class:`ResultConfig` attached to the step.
+    """
+    step_config = config or ResultConfig()
+
+    data = DataInstance.from_profile(profile)
+    
+
+    step_result = run_rules_on_instance(data, rule_codes, config=step_config)
+
+    return step_result
+
+
 
 
 def simulation_from_config(config_path: str) -> None:
@@ -250,6 +269,7 @@ def simulation_instance(
     n_iteration: int = 1000,
     seed: int = 161,
     base_path: str = "data",
+    reload: bool = False,
 ) -> SimulationSeriesResult:
     """Run the workflow on a single (model, voters, candidates) instance.
 
@@ -282,13 +302,15 @@ def simulation_instance(
 
     # --- Cache check ---
     cache_path = Path(base_path) / "results" / f"{step_config.label}.parquet"
-    if cache_path.is_file():
-        cached = SimulationSeriesResult()
-        cached.load_from_file(str(cache_path))
-        if cached.step_count == n_iteration:
-            print(f"Cache hit: loaded {cached.step_count} steps from {cache_path}")
-            return cached
-        print(f"Cache stale ({cached.step_count} steps vs {n_iteration} requested) — re-running.")
+    if not reload:
+        cache_path = Path(base_path) / "results" / f"{step_config.label}.parquet"
+        if cache_path.is_file():
+            cached = SimulationSeriesResult()
+            cached.load_from_file(str(cache_path))
+            if cached.step_count == n_iteration:
+                print(f"Cache hit: loaded {cached.step_count} steps from {cache_path}")
+                return cached
+            print(f"Cache stale ({cached.step_count} steps vs {n_iteration} requested) — re-running.")
 
     print(f"Running simulation: {step_config.description} × {n_iteration} iterations")
     series = SimulationSeriesResult()
@@ -313,58 +335,44 @@ def simulation_instance(
     return series
 
 
-def simulation_full(config_path: str) -> None:
-    """Full pipeline: generate profiles, apply rules, save results.
+def simulation_series_from_config(config_path: str, reload: bool = False) -> SimulationTotalResult:
+    """Run simulation instances for every combination in the config.
 
-    Alias for :func:`simulation_from_config`.
-    """
-    return simulation_from_config(config_path)
-
-
-def simulation_from_file(file_path: str, rule_codes: list[str]) -> SimulationStepResult:
-    """Run simulation on a single file with specified rules."""
-    data_instance = DataInstance(file_path)
-    step_result = run_rules_on_instance(data_instance, rule_codes)
-    return step_result
-
-
-def simulation_series(folder_path: str, rule_codes: list[str]) -> SimulationSeriesResult:
-    """Run simulations on all files in a folder and return a :class:`SimulationSeriesResult`.
-
-    Each file is processed as a :class:`SimulationStepResult` and accumulated
-    into the series via :meth:`SimulationSeriesResult.add_step`, which keeps the
-    running sum matrix up to date incrementally.
+    Iterates over each ``(model, n_voters, n_candidates)`` triplet defined
+    in the TOML configuration, delegates to :func:`simulation_instance`,
+    and collects all resulting series into a :class:`SimulationTotalResult`.
 
     Args:
-    folder_path: Path to the folder containing input CSV or Parquet files.
-    rule_codes: List of rule codes to apply to each file (e.g. ["RV", "MJ", "AP_T"]).
+        config_path: Path to the TOML configuration file.
 
     Returns:
-    A :class:`SimulationSeriesResult` containing all the step results and the aggregated mean distance matrix.
+        A :class:`SimulationTotalResult` containing one series per
+        ``(model, voters, candidates)`` combination.
     """
-    folder = Path(folder_path)
-    if not folder.is_dir():
-        raise ValueError(f"Input folder not found: {folder}")
+    config = load_simulation_config(config_path)
+    _validate_generation_config(config)
 
-    data_files = list(folder.glob("*.csv")) + list(folder.glob("*.parquet"))
-    if not data_files:
-        print(f"No CSV or Parquet files found in {folder}")
-        return SimulationSeriesResult()
+    total_result = SimulationTotalResult()
+    n_combos = len(config.generative_models) * len(config.voters or []) * len(config.candidates or [])
+    with tqdm(total=n_combos, desc="Running simulation series") as pbar:
+        for model in config.generative_models:
+            for n_v in config.voters or []:
+                for n_c in config.candidates or []:
+                    series = simulation_instance(
+                        gen_code=model,
+                        n_v=n_v,
+                        n_c=n_c,
+                        rule_codes=config.rule_codes,
+                        n_iteration=config.iterations,
+                        seed=config.seed,
+                        base_path=config.output_base_path,
+                        reload=reload,
+                    )
+                    total_result.add_series(series)
+                    pbar.update(1)
 
-    print(f"Found {len(data_files)} data files to process in {folder}")
-
-    series = SimulationSeriesResult()
-    for file_path in tqdm(sorted(data_files)):
-        try:
-            step_result = simulation_from_file(str(file_path), rule_codes)
-            series.add_step(step_result)
-        except Exception as e:  # noqa: BLE001
-            print(f"Error processing file '{file_path}': {e}")
-
-    print(f"\n{'=' * 60}")
-    print(f"Series simulation completed — {series.step_count} iteration(s)")
-    print(f"{'=' * 60}")
-    return series
+    print(f"Completed {total_result.series_count} simulation series.")
+    return total_result
 
 
 # validation

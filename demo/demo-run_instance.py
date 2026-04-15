@@ -4,22 +4,6 @@ from vote_simulation.models.rules.registry import make_rule_builder, register_ru
 from vote_simulation.simulation.simulation import simulation_instance
 
 if __name__ == "__main__":
-    register_rule("AP_K2", make_rule_builder(lambda profile: RuleKApproval(k=2)(profile)))
-    register_rule("AP_K3", make_rule_builder(lambda profile: RuleKApproval(k=3)(profile)))
-    register_rule("AP_K4", make_rule_builder(lambda profile: RuleKApproval(k=4)(profile)))
-    register_rule("AP_K5", make_rule_builder(lambda profile: RuleKApproval(k=5)(profile)))
-    register_rule("AP_K6", make_rule_builder(lambda profile: RuleKApproval(k=6)(profile)))
-    register_rule("AP_K7", make_rule_builder(lambda profile: RuleKApproval(k=7)(profile)))
-    register_rule("AP_K8", make_rule_builder(lambda profile: RuleKApproval(k=8)(profile)))
-    register_rule("AP_K9", make_rule_builder(lambda profile: RuleKApproval(k=9)(profile)))
-    register_rule("AP_K10", make_rule_builder(lambda profile: RuleKApproval(k=10)(profile)))
-    register_rule("AP_K11", make_rule_builder(lambda profile: RuleKApproval(k=11)(profile)))
-    register_rule("AP_K12", make_rule_builder(lambda profile: RuleKApproval(k=12)(profile)))
-    register_rule("AP_T05", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.5)(profile)))
-    register_rule("AP_T06", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.6)(profile)))
-    register_rule("AP_T07", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.7)(profile)))
-    register_rule("AP_T08", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.8)(profile)))
-    register_rule("AP_T09", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.9)(profile)))
 
     rules_codes = [
         "RV",
@@ -43,7 +27,7 @@ if __name__ == "__main__":
     ]
 
     # 1) Run simulation (with cache — first run computes, second run loads)
-    series = simulation_instance("UNI", 1001, 3, rules_codes, n_iteration=1000)
+    series = simulation_instance("EUCLID_5D", 1001, 14, rules_codes, n_iteration=1000)
 
     # 2) Config info – automatically aggregated from steps
     print("\n" + "=" * 60)

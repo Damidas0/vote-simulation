@@ -8,10 +8,10 @@ from vote_simulation.simulation.configuration import load_simulation_config
 from vote_simulation.simulation.simulation import (
     generate_data,
     obtain_data_instance,
-    simulation_full,
+    simulation_from_config,
 )
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━ Config parsing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Config parsing
 
 
 class TestConfigGenerativeModels:
@@ -70,7 +70,7 @@ class TestConfigGenerativeModels:
         assert config.generative_models == []
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━ obtain_data_instance ━━━━━━━━━━━━━━━━━━━━━━━━━━
+# obtain_data_instance
 
 
 class TestObtainDataInstance:
@@ -98,7 +98,7 @@ class TestObtainDataInstance:
         np.testing.assert_array_almost_equal(di1.data, di2.data)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━ generate_data ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  generate_data 
 
 
 class TestGenerateData:
@@ -142,8 +142,7 @@ class TestGenerateData:
             generate_data(str(cfg))
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━ simulation_full ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+#  simulation_full 
 
 class TestSimulationFull:
     """Integration test: generate → run rules → save results."""
@@ -163,7 +162,7 @@ class TestSimulationFull:
             """.strip(),
             encoding="utf-8",
         )
-        simulation_full(str(cfg))
+        simulation_from_config(str(cfg))
 
         # Check gen files
         gen_dir = tmp_path / "out" / "gen" / "UNI_v9_c3"

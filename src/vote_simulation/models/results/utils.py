@@ -1,23 +1,11 @@
-
-
 from __future__ import annotations
 
 import os
 from builtins import max as builtins_max
 from builtins import min as builtins_min
-from dataclasses import dataclass, field
-from textwrap import indent
 from typing import Any, NamedTuple
 
 import numpy as np
-import pandas as pd
-
-from vote_simulation.models.distance import Distance
-from vote_simulation.models.distance.distance import JaccardDistance
-
-
-
-import os
 
 
 def _plot_heatmap(
@@ -43,7 +31,7 @@ def _plot_heatmap(
     rule_count = len(labels)
     longest_label = builtins_max((len(lbl) for lbl in labels), default=1)
     figure_size = builtins_max(6.0, 0.45 * rule_count + 0.18 * longest_label)
-    annotation_fontsize = builtins_max(4, builtins_min(10, int(220 / builtins_max(rule_count, 1))))
+    annotation_fontsize = builtins_max(4, builtins_min(10, int(240 / builtins_max(rule_count, 1))))
 
     if ax is None:
         _, ax = plt.subplots(figsize=(figure_size, figure_size), constrained_layout=True)
@@ -89,7 +77,6 @@ def _plot_heatmap(
         plt.savefig(save_path)
 
     return ax
-
 
 
 class MdsProjection(NamedTuple):

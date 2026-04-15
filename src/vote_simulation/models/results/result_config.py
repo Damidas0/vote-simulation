@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from builtins import max as builtins_max
-from builtins import min as builtins_min
-
 from dataclasses import dataclass, field
 
 
@@ -118,4 +116,3 @@ class ResultConfig:
 
     def __bool__(self) -> bool:
         return bool(self.gen_models or self.n_voters or self.n_candidates or self.n_iterations)
-

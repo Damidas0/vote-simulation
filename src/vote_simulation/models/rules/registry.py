@@ -90,11 +90,25 @@ def _winner_index(rule: object) -> int | None:
 def _compute_cowinners(rule: object) -> list[str]:
     profile = getattr(rule, "profile_", None)
     weak_winners = getattr(profile, "weak_condorcet_winners", None)
+    n_candidates = getattr(profile, "n_c", None)
     if weak_winners is not None:
         weak_winner_indices = np.flatnonzero(np.asarray(weak_winners, dtype=bool))
-        n_candidates = getattr(profile, "n_c", None)
-        if isinstance(n_candidates, int) and n_candidates == 2 and weak_winner_indices.size == 2:
+        if n_candidates == 2 and weak_winner_indices.size == 2:
             return [_label_for_candidate(rule, int(candidate_index)) for candidate_index in weak_winner_indices]
+
+        if weak_winner_indices.size > 1:
+            matrix_victories = getattr(profile, "matrix_victories_ut_abs", None)
+            if matrix_victories is not None:
+                try:
+                    matrix_victories_array = np.asarray(matrix_victories, dtype=float)
+                except Exception:
+                    matrix_victories_array = None
+                if (
+                    matrix_victories_array is not None
+                    and matrix_victories_array.size > 0
+                    and np.all(np.isclose(matrix_victories_array, 0.0, equal_nan=False))
+                ):
+                    return [_label_for_candidate(rule, int(candidate_index)) for candidate_index in weak_winner_indices]
 
     scores = getattr(rule, "scores_", None)
     if scores is not None:
@@ -102,20 +116,17 @@ def _compute_cowinners(rule: object) -> list[str]:
             scores_array = np.asarray(scores)
         except Exception:
             scores_array = None
-        if scores_array is not None and scores_array.ndim == 1 and scores_array.size > 0:
-            best_score = np.max(scores_array)
-            winner_indices = np.flatnonzero(np.isclose(scores_array, best_score, equal_nan=False))
-            if winner_indices.size > 0:
-                return [_label_for_candidate(rule, int(candidate_index)) for candidate_index in winner_indices]
+        if scores_array is not None and scores_array.size > 0:
+            if scores_array.ndim == 1:
+                best_score = np.max(scores_array)
+                winner_indices = np.flatnonzero(np.isclose(scores_array, best_score, equal_nan=False))
+                if winner_indices.size > 0:
+                    return [_label_for_candidate(rule, int(candidate_index)) for candidate_index in winner_indices]
 
     winner_index = _winner_index(rule)
     if winner_index is not None:
         return [_label_for_candidate(rule, winner_index)]
 
-    if weak_winners is not None:
-        weak_winner_indices = np.flatnonzero(np.asarray(weak_winners, dtype=bool))
-        if weak_winner_indices.size > 0:
-            return [_label_for_candidate(rule, int(candidate_index)) for candidate_index in weak_winner_indices]
     return []
 
 
@@ -160,6 +171,10 @@ def _build_with_rule(rule_factory: Callable[[Profile], Any]) -> RuleBuilder:
     return builder
 
 
+def get_all_rules_codes() -> list[str]:
+    """Return a list of all registered rule codes."""
+    return sorted(_RULE_BUILDERS.keys())
+
 def make_rule_builder(rule_factory: Callable[[Profile], Any]) -> RuleBuilder:
     """Create a public `RuleBuilder` from a `Profile -> rule result` factory.
 
@@ -199,6 +214,8 @@ def get_rule_builder(code: str) -> RuleBuilder:
     except KeyError as error:
         available = ", ".join(sorted(_RULE_BUILDERS))
         raise ValueError(f"Unknown rule code: '{code}'. Available codes: {available}") from error
+    
+
 
 
 register_rule("PLU1", _build_with_rule(lambda profile: RulePlurality()(profile)))
@@ -289,3 +306,22 @@ register_rule("IRVA", _build_with_rule(lambda profile: RuleIRVAverage()(profile)
 register_rule("SIRV", _build_with_rule(lambda profile: RuleSmithIRV()(profile)))
 register_rule("TIDE", _build_with_rule(lambda profile: RuleTideman()(profile)))
 register_rule("WOOD", _build_with_rule(lambda profile: RuleWoodall()(profile)))
+
+
+register_rule("AP_K2", make_rule_builder(lambda profile: RuleKApproval(k=2)(profile)))
+register_rule("AP_K3", make_rule_builder(lambda profile: RuleKApproval(k=3)(profile)))
+register_rule("AP_K4", make_rule_builder(lambda profile: RuleKApproval(k=4)(profile)))
+register_rule("AP_K5", make_rule_builder(lambda profile: RuleKApproval(k=5)(profile)))
+register_rule("AP_K6", make_rule_builder(lambda profile: RuleKApproval(k=6)(profile)))
+register_rule("AP_K7", make_rule_builder(lambda profile: RuleKApproval(k=7)(profile)))
+register_rule("AP_K8", make_rule_builder(lambda profile: RuleKApproval(k=8)(profile)))
+register_rule("AP_K9", make_rule_builder(lambda profile: RuleKApproval(k=9)(profile)))
+register_rule("AP_K10", make_rule_builder(lambda profile: RuleKApproval(k=10)(profile)))
+register_rule("AP_K11", make_rule_builder(lambda profile: RuleKApproval(k=11)(profile)))
+register_rule("AP_K12", make_rule_builder(lambda profile: RuleKApproval(k=12)(profile)))
+
+register_rule("AP_T05", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.5)(profile)))
+register_rule("AP_T06", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.6)(profile)))
+register_rule("AP_T07", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.7)(profile)))
+register_rule("AP_T08", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.8)(profile)))
+register_rule("AP_T09", make_rule_builder(lambda profile: RuleApproval(approval_threshold=0.9)(profile)))

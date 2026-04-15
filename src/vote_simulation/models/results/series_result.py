@@ -3,22 +3,16 @@
 from __future__ import annotations
 
 import os
-from builtins import max as builtins_max
-from builtins import min as builtins_min
 from dataclasses import dataclass, field
-from textwrap import indent
-from typing import Any, NamedTuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from vote_simulation.models.distance import Distance
-from vote_simulation.models.distance.distance import JaccardDistance
-
 from vote_simulation.models.results.result_config import ResultConfig
-
-from vote_simulation.models.results.utils import _plot_heatmap, MdsProjection
 from vote_simulation.models.results.step_result import SimulationStepResult
+from vote_simulation.models.results.utils import MdsProjection, _plot_heatmap
+
 
 @dataclass(slots=True)
 class SimulationSeriesResult:
