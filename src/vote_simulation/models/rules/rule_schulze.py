@@ -39,12 +39,7 @@ class SchulzeResult(SvvampRuleWrapper):
         scores = self._inner.scores_  # 2-D: scores_[c, d] = widest path c→d
         n_c = scores.shape[0]
         # c is a potential winner iff no d strictly beats it
-        potential = np.array(
-            [
-                not any(scores[d, c] > scores[c, d] for d in range(n_c) if d != c)
-                for c in range(n_c)
-            ]
-        )
+        potential = np.array([not any(scores[d, c] > scores[c, d] for d in range(n_c) if d != c) for c in range(n_c)])
         indices = np.where(potential)[0]
         return self._resolve_cowinners(indices)
 

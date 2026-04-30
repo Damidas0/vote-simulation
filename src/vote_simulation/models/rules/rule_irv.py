@@ -87,7 +87,6 @@ register_rule("IRV", _build_irv(cm_option="fast"))
 register_rule("IRV_EXACT", _build_irv(cm_option="exact"))
 
 
-
 if __name__ == "__main__":
     from vote_simulation.models.rules.registry import _ensure_profile
 

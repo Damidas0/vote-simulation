@@ -71,9 +71,9 @@ class MajorityJudgmentResult(SvvampRuleWrapper):
 
     def _compute_mj_cowinners(self) -> list[str]:
         """Return labels of all candidates at the lexicographic top."""
-        scores = self._inner.scores_          # shape [2, n_c]
-        medians = scores[0, :]                # row 0: median grades
-        tiebreaks = scores[1, :]              # row 1: +p or -q
+        scores = self._inner.scores_  # shape [2, n_c]
+        medians = scores[0, :]  # row 0: median grades
+        tiebreaks = scores[1, :]  # row 1: +p or -q
 
         max_med = np.max(medians)
         med_mask = medians == max_med

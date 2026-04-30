@@ -123,7 +123,7 @@ def run_rules_on_instance(
             rule: RuleResult = builder(profile, None)
             winners = rule.cowinners_
             try:
-                metrics = rule.compute_metrics()  # type: ignore[attr-defined]
+                metrics = rule.compute_metrics()
                 step.add_method_result_with_metrics(normalized, winners, metrics)
             except Exception:
                 # Rule wrappers outside SvvampRuleWrapper don't carry metrics — degrade gracefully.
@@ -327,26 +327,26 @@ def simulation_instance(
         cached = SimulationSeriesResult()
         cached.load_from_file(str(cache_path))
 
-#        if cached.step_count != n_iteration:
-            #print(f"Cache stale ({cached.step_count} steps vs {n_iteration} requested) — re-running.")
-        #elif not cached.config.matches_base(base_config):
-            #print("Cache config mismatch — re-running.")
-#        else:
-            # Cache is valid for base parameters
+        #        if cached.step_count != n_iteration:
+        # print(f"Cache stale ({cached.step_count} steps vs {n_iteration} requested) — re-running.")
+        # elif not cached.config.matches_base(base_config):
+        # print("Cache config mismatch — re-running.")
+        #        else:
+        # Cache is valid for base parameters
         cached_rules = set(cached.config.rules_codes)
         requested_rules = set(normalized_rules)
 
         if cached_rules == requested_rules:
             # Perfect match! Return cached series
-            #print(f"Cache hit: loaded {cached.step_count} steps from {cache_path}")
+            # print(f"Cache hit: loaded {cached.step_count} steps from {cache_path}")
             return cached
         elif cached_rules < requested_rules:
             # Partial match: cached has subset of requested rules
             new_rules = sorted(requested_rules - cached_rules)
-            #print(
+            # print(
             #    f"Partial cache hit: {cached.step_count} steps with rules "
             #    f"{sorted(cached_rules)}. Adding {new_rules}..."
-            #)
+            # )
             cached.add_rules_to_steps(new_rules)
             # Update config to match requested rules
             cached.config = ResultConfig.single(
@@ -359,19 +359,19 @@ def simulation_instance(
             # Save updated series with new rules
             cache_path.parent.mkdir(parents=True, exist_ok=True)
             cached.save_to_file(str(cache_path))
-            #print(f"Updated cache saved to {cache_path}")
+            # print(f"Updated cache saved to {cache_path}")
             return cached
-        #else:
-                # Cached has rules we don't want (or extra rules not matching scenarios)
-               # print(
-               #     f"Cache rule mismatch: cached has {sorted(cached_rules)}, "
-               #     f"but requested {sorted(requested_rules)} — re-running."
-               # )
+        # else:
+        # Cached has rules we don't want (or extra rules not matching scenarios)
+        # print(
+        #     f"Cache rule mismatch: cached has {sorted(cached_rules)}, "
+        #     f"but requested {sorted(requested_rules)} — re-running."
+        # )
 
     # --- No valid cache: compute from scratch ---
-    #print(
+    # print(
     #    f"Running simulation: {base_config.description} × {n_iteration} iterations with {len(normalized_rules)} rules"
-    #)
+    # )
     series = SimulationSeriesResult()
     with tqdm(total=n_iteration, desc="Simulating", disable=not show_progress) as pbar:
         for it in range(n_iteration):
@@ -393,7 +393,7 @@ def simulation_instance(
     # --- Persist for future cache hits ---
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     series.save_to_file(str(cache_path))
-    #print(f"Simulation completed — cached to {cache_path}")
+    # print(f"Simulation completed — cached to {cache_path}")
     return series
 
 

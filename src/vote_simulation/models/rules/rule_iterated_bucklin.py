@@ -101,8 +101,6 @@ register_rule("BUCK_I", _build_iterated_bucklin())
 register_rule("BUCK_I_EXACT", _build_iterated_bucklin(cm_option="exact"))
 
 if __name__ == "__main__":
-    import numpy as np
-
     # Case 1 — clear winner (candidate 0 has highest adjusted median every round)
     result1 = IteratedBucklinResult(
         _ensure_profile(

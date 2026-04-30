@@ -19,6 +19,8 @@ The design contract is:
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 from svvamp import Profile
 
@@ -50,6 +52,7 @@ class SvvampRuleWrapper:
     """
 
     profile_: Profile
+    _inner: Any
     cowinners_: list[str]
     cowinner_indices_: np.ndarray  # 1-D int array, set by _resolve_cowinners
 

@@ -77,7 +77,7 @@ def _build_k_approval(*, k: int = 2):
 # Rule registrations
 # ---------------------------------------------------------------------------
 
-register_rule("AP_K", _build_k_approval(k=2))   # legacy alias
+register_rule("AP_K", _build_k_approval(k=2))  # legacy alias
 register_rule("AP_K2", _build_k_approval(k=2))
 register_rule("AP_K3", _build_k_approval(k=3))
 register_rule("AP_K4", _build_k_approval(k=4))

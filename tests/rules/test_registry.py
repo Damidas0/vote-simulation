@@ -94,8 +94,10 @@ def test_register_rule():
             or hasattr(rule_instance, "winner_")
             or hasattr(rule_instance, "cowinners_")
         )
+
+
 #
-#def test_ensure_profile_preserves_equal_score_ties_from_ballots():
+# def test_ensure_profile_preserves_equal_score_ties_from_ballots():
 #    """Registry conversion should keep equal scores at the same rank."""
 #    profile = _ensure_profile(
 #        [
@@ -132,6 +134,7 @@ def test_ensure_profile_generates_default_labels_for_matrix_ballots():
     profile = _ensure_profile(np.array([[2.0, 1.0], [0.0, 3.0]], dtype=float), None)
 
     assert list(profile.labels_candidates) == ["Candidate 1", "Candidate 2"]
+
 
 @pytest.mark.parametrize(
     ("rule_code", "expected_cowinners"),

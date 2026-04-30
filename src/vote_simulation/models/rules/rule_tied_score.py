@@ -6,7 +6,6 @@ used internally by svvamp to resolve ``w_``.
 """
 
 from __future__ import annotations
-from collections.abc import Callable
 
 from svvamp import Profile, RuleCopeland
 

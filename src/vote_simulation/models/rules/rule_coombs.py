@@ -2,7 +2,7 @@
 
 Co-winners are **all** candidates that survive to the final elimination round
 and share the maximum score (least negative = fewest last-place votes) in that
-round. 
+round.
 
 ``scores_[r, c]`` = minus the number of voters who rank ``c`` last among
 remaining candidates at round ``r``.  Eliminated candidates carry ``nan``.

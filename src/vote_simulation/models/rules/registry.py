@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import numpy as np
 from svvamp import (
@@ -19,13 +19,17 @@ from svvamp.rules.rule_irv_duels import RuleIRVDuels
 from svvamp.rules.rule_ranked_pairs import RuleRankedPairs
 from svvamp.rules.rule_smith_irv import RuleSmithIRV
 
-RuleInput = Profile | Sequence[Mapping[str, float]] | Sequence[Sequence[float]] | np.ndarray
+BallotRows = Sequence[Mapping[str, float]] | Sequence[Sequence[float]]
+BallotInput = BallotRows | np.ndarray
+RuleInput = Profile | BallotInput
 
 
 class RuleResult(Protocol):
     """Protocol for rule results that have been post-processed to include co-winners."""
 
     cowinners_: list[str]
+
+    def compute_metrics(self) -> Any: ...
 
 
 RuleBuilder = Callable[[RuleInput, set[str] | None], RuleResult]
@@ -125,7 +129,7 @@ def _default_labels(n_candidates: int) -> list[str]:
     return [f"Candidate {index + 1}" for index in range(n_candidates)]
 
 
-def _infer_labels(ballots: RuleInput, candidates: set[str] | None) -> list[str]:
+def _infer_labels(ballots: BallotInput, candidates: set[str] | None) -> list[str]:
     if candidates:
         return sorted(str(candidate) for candidate in candidates)
 
@@ -139,8 +143,9 @@ def _infer_labels(ballots: RuleInput, candidates: set[str] | None) -> list[str]:
 
     first_ballot = ballots[0]
     if _is_mapping_ballot(first_ballot):
-        if first_ballot:
-            return [str(label) for label in first_ballot.keys()]
+        first_ballot_map = cast(Mapping[str, float], first_ballot)
+        if first_ballot_map:
+            return [str(label) for label in first_ballot_map.keys()]
         raise ValueError("Unable to infer candidate labels from empty ballot mapping.")
 
     if isinstance(first_ballot, Sequence) and not isinstance(first_ballot, str | bytes):
@@ -174,23 +179,24 @@ def _ensure_profile(profile_or_ballots: RuleInput, candidates: set[str] | None =
     if isinstance(profile_or_ballots, Profile):
         return profile_or_ballots
 
-    labels = _infer_labels(profile_or_ballots, candidates)
-    if isinstance(profile_or_ballots, np.ndarray):
-        matrix = np.asarray(profile_or_ballots, dtype=np.float64)
-    elif len(profile_or_ballots) > 0 and _is_mapping_ballot(profile_or_ballots[0]):
+    ballots = profile_or_ballots
+
+    labels = _infer_labels(ballots, candidates)
+    if isinstance(ballots, np.ndarray):
+        matrix = np.asarray(ballots, dtype=np.float64)
+    elif len(ballots) > 0 and _is_mapping_ballot(ballots[0]):
+        mapping_ballots = cast(Sequence[Mapping[str, float]], ballots)
         matrix = np.asarray(
-            [[float(ballot[label]) for label in labels] for ballot in profile_or_ballots],
+            [[float(ballot[label]) for label in labels] for ballot in mapping_ballots],
             dtype=np.float64,
         )
     else:
-        matrix = np.asarray(profile_or_ballots, dtype=np.float64)
+        matrix = np.asarray(ballots, dtype=np.float64)
 
     if matrix.ndim != 2:
         raise ValueError("preferences_ut must be a 2d array.")
     if matrix.shape[1] != len(labels):
-        raise ValueError(
-            f"Candidate label count ({len(labels)}) does not match ballot width ({matrix.shape[1]})."
-        )
+        raise ValueError(f"Candidate label count ({len(labels)}) does not match ballot width ({matrix.shape[1]}).")
 
     preferences_rk = _ut_to_rk_stable(matrix)
     return Profile(preferences_ut=matrix, preferences_rk=preferences_rk, labels_candidates=labels)

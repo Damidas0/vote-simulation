@@ -40,6 +40,8 @@ Subclass :class:`EliminationBasedRuleWrapper`, set ``profile_`` and
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from vote_simulation.models.rules.base import SvvampRuleWrapper
@@ -61,7 +63,7 @@ class EliminationBasedRuleWrapper(SvvampRuleWrapper):
     rounds.
     """
 
-    _inner: object
+    _inner: Any
 
     def _init_elimination_based(self) -> list[str]:
         """Compute co-winners from the last elimination round of ``_inner.scores_``.
@@ -80,9 +82,7 @@ class EliminationBasedRuleWrapper(SvvampRuleWrapper):
         """
         scores = getattr(self._inner, "scores_", None)
         if scores is None:
-            raise AttributeError(
-                f"{type(self._inner).__name__} does not expose a 'scores_' attribute."
-            )
+            raise AttributeError(f"{type(self._inner).__name__} does not expose a 'scores_' attribute.")
 
         arr = np.asarray(scores, dtype=float)
         if arr.ndim != 2:

@@ -176,7 +176,7 @@ class SimulationSeriesResult:
         """
         if not self._metrics_sum:
             col_names = [f"{f}_{s}" for f in METRIC_FIELDS for s in ("mean", "std")]
-            return pd.DataFrame(columns=col_names)
+            return pd.DataFrame(columns=pd.Index(np.asarray(col_names, dtype=object)))
 
         rows = []
         for rule in self._rule_order:
@@ -195,7 +195,7 @@ class SimulationSeriesResult:
 
         if not rows:
             col_names = [f"{f}_{s}" for f in METRIC_FIELDS for s in ("mean", "std")]
-            return pd.DataFrame(columns=col_names)
+            return pd.DataFrame(columns=pd.Index(np.asarray(col_names, dtype=object)))
         return pd.DataFrame(rows).set_index("rule")
 
     # ------------------------------------------------------------------

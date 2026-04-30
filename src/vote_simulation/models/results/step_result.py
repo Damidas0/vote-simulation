@@ -133,7 +133,7 @@ class SimulationStepResult:
         Rules without metrics are omitted.
         """
         if not self._metrics_by_rule:
-            return pd.DataFrame(columns=list(METRIC_FIELDS))
+            return pd.DataFrame(columns=pd.Index(np.asarray(list(METRIC_FIELDS), dtype=object)))
         rows = [{"rule": code, **m.to_dict()} for code, m in self._metrics_by_rule.items()]
         return pd.DataFrame(rows).set_index("rule")
 

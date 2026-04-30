@@ -32,7 +32,7 @@ are all ready.
 
 from __future__ import annotations
 
-from svvamp import Profile
+from typing import Any
 
 from vote_simulation.models.rules.base import SvvampRuleWrapper
 
@@ -59,7 +59,7 @@ class ScoreBasedRuleWrapper(SvvampRuleWrapper):
     _inner   : executed svvamp rule (has a ``scores_`` 1-D attribute)
     """
 
-    _inner: object  # executed svvamp rule instance
+    _inner: Any  # executed svvamp rule instance
 
     def _init_score_based(self) -> list[str]:
         """Compute and return co-winners from ``_inner.scores_``.

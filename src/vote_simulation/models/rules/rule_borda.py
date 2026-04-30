@@ -78,7 +78,6 @@ register_rule("BORD", _build_borda(cm_option="fast"))
 register_rule("BORD_EXACT", _build_borda(cm_option="exact"))
 
 
-
 if __name__ == "__main__":
     import numpy as np
     from svvamp import Profile

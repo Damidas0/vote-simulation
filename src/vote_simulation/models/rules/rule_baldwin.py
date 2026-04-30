@@ -11,7 +11,6 @@ carry ``numpy.inf`` from the round they were removed onward.
 
 from __future__ import annotations
 
-import numpy as np
 from svvamp import Profile, RuleBaldwin
 
 from vote_simulation.models.rules.elimination_based import EliminationBasedRuleWrapper
@@ -103,17 +102,16 @@ register_rule("BALD_FAST", _build_baldwin(cm_option="fast"))
 if __name__ == "__main__":
     # Quick test: run Baldwin on the reference profile and check co-winners.
     ballot = [
-        [1,0,0],
-        [0,1,0],
-        [0,0,1],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
     ]
 
-    #if isinstance(ballot, list):
+    # if isinstance(ballot, list):
     #    ballot = np.array(ballot, dtype=np.float64)
-    
 
     profile = _ensure_profile(ballot, {"A", "B", "C"})
-    #profile.demo()
+    # profile.demo()
     result = BaldwinResult(_ensure_profile(ballot, {"A", "B", "C"}))
     print(result.scores_)
     print(result.candidates_worst_to_best_)
